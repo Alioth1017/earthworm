@@ -1,158 +1,194 @@
 <template>
-  <div>
-    <dialog
-      className="modal mt-[-8vh]"
-      :open="showModal"
+  <UModal
+    v-model="showModal"
+    prevent-close
+  >
+    <UContainer
+      :ui="{
+        base: 'w-[90vw]',
+        constrained: 'max-w-[780px]',
+      }"
     >
-      <div className="modal-box max-w-[48rem]">
-        <div class="relative">
-          <h3 className="font-bold text-lg mb-4">🎉 Congratulations!</h3>
-          <button
-            tabindex="0"
-            class="absolute top-0 right-0 w-8 h-8 p-0 mx-1 rounded-md btn btn-sm btn-ghost"
-            @click="soundSentence"
-          >
-            <svg
-              t="1708743313057"
-              class="icon"
-              viewBox="0 0 1024 1024"
-              version="1.1"
-              xmlns="http://www.w3.org/2000/svg"
-              p-id="1534"
-              xmlns:xlink="http://www.w3.org/1999/xlink"
-            >
-              <path
-                d="M513.3 105.4L309.9 309H165.7c-37.5 0-67.9 30.4-67.9 67.9v271.4c0 37.5 30.4 67.9 67.9 67.9h144.2l203.5 203.6c37.5 0 67.8-30.4 67.8-67.9V173.3c0-37.5-30.4-67.9-67.9-67.9z m0 744.1l-178-196.4H165.7V381.7h169.6l178-196.5v664.3z m402.2-307.2c6.7 0 12.1-13.3 12.1-29.8 0-16.4-5.4-29.8-12.1-29.8h-84.8c-6.7 0-12.1 13.3-12.1 29.8 0 16.4 5.4 29.8 12.1 29.8h84.8z m9.2-384.6c5.8-3.3 3.8-17.6-4.4-31.8s-19.6-23.1-25.4-19.7l-73.5 42.4c-5.8 3.3-3.8 17.6 4.4 31.8s19.6 23.1 25.4 19.7l73.5-42.4z m0 709.7c5.8 3.4 3.8 17.6-4.4 31.8s-19.6 23.1-25.4 19.7l-73.5-42.4c-5.8-3.4-3.8-17.6 4.4-31.8s19.6-23.1 25.4-19.7l73.5 42.4zM628.9 665c-6.1-16.3-4.4-31.7 11.9-37.8 41.1-19 60.8-55.9 65.8-102.3 5.9-54.1-20-103.8-64.7-124.2-14.6-9.4-20.7-25.7-11.3-40.3 9.4-14.6 25.7-20.7 40.3-11.3 66.2 38.4 105.8 105.2 97.4 182.5-6.7 61.8-44.3 120.2-101.7 145.3-13.3 7.6-31.3 2.6-37.7-11.9z m0 0"
-                p-id="1535"
-                fill="currentColor"
-              />
-            </svg>
-          </button>
-        </div>
-
-        <div class="flex flex-col">
-          <div class="flex">
-            <span class="text-6xl font-bold">"</span>
-            <div class="flex-1 text-xl leading-loose text-center">
-              {{ enSentence }}
-            </div>
-            <span class="invisible text-6xl font-bold">"</span>
-          </div>
-
-          <div class="flex">
-            <span class="invisible text-6xl font-bold">"</span>
-            <div class="flex-1 text-xl leading-loose text-center">
-              {{ zhSentence }}
-            </div>
-            <span class="text-6xl font-bold">"</span>
-          </div>
-          <p class="text-right text-gray-200 text-3">—— 金山词霸「每日一句」</p>
-          <p class="text-gray-600 text-base leading-loose pl-14">
-            {{
-              `恭喜您一共完成 ${courseTimer.totalRecordNumber()} 道题，用时 ${formatSecondsToTime(
-                courseTimer.calculateTotalTime()
-              )} `
-            }}
-          </p>
-        </div>
-        <div className="modal-action">
-          <button
-            class="btn btn-primary"
-            @click="toShare"
-          >
-            生成打卡图
-          </button>
-          <button
-            class="btn"
-            @click="handleDoAgain"
-          >
-            再来一次
-          </button>
-          <button
-            class="btn"
-            @click="handleGoToNextCourse"
-          >
-            开始下一课<kbd class="kbd"> ↵ </kbd>
-          </button>
-        </div>
+      <div class="flex justify-between">
+        <h3 className="font-bold text-lg mb-4">🎉 恭喜!</h3>
+        <button
+          tabindex="0"
+          class="btn btn-ghost btn-sm mx-1 h-7 w-7 rounded-md p-0"
+          @click="soundSentence"
+        >
+          <UIcon
+            name="i-ph-speaker-simple-high"
+            class="h-full w-full"
+          ></UIcon>
+        </button>
       </div>
-      <canvas
-        ref="confettiCanvasRef"
-        class="absolute top-0 left-0 w-full h-full pointer-events-none"
-      ></canvas>
-    </dialog>
-  </div>
+
+      <div class="flex flex-col">
+        <div class="flex">
+          <span class="text-3xl font-bold sm:text-4xl lg:text-6xl">"</span>
+          <div class="flex-1 text-center text-sm leading-loose sm:text-base lg:text-xl">
+            {{ enSentence }}
+          </div>
+          <span class="invisible text-3xl font-bold sm:text-4xl lg:text-6xl">"</span>
+        </div>
+
+        <div class="flex">
+          <span class="invisible text-3xl font-bold sm:text-4xl lg:text-6xl">"</span>
+          <div class="flex-1 text-center text-sm leading-loose sm:text-base lg:text-xl">
+            {{ zhSentence }}
+          </div>
+          <span class="text-3xl font-bold sm:text-4xl lg:text-6xl">"</span>
+        </div>
+        <p class="text-right text-xs text-gray-200 sm:text-sm">—— 金山词霸「每日一句」</p>
+        <p
+          class="pl-2 text-xs leading-loose text-gray-600 sm:pl-4 sm:text-sm lg:pl-14 lg:text-base"
+        >
+          {{
+            `恭喜您一共完成 ${courseTimer.totalRecordNumber()} 道题，用时 ${formatSecondsToTime(
+              courseTimer.calculateTotalTime(),
+            )} `
+          }}
+        </p>
+        <p
+          v-if="isAuthenticated()"
+          class="pl-2 text-xs leading-loose text-gray-400 sm:pl-4 sm:text-sm lg:pl-14 lg:text-base"
+        >
+          今天一共学习 <span class="text-purple-500">{{ formattedMinutes }}分钟</span> 啦！
+          <span v-if="totalMinutes >= 30">太强了，给自己来点掌声 😄</span>
+        </p>
+      </div>
+      <div className="modal-action flex flex-col sm:flex-row gap-2 justify-center sm:justify-end">
+        <button
+          class="btn btn-primary w-full sm:w-auto"
+          @click="toShare"
+        >
+          生成打卡图
+        </button>
+        <button
+          class="btn w-full sm:w-auto"
+          @click="handleDoAgain"
+        >
+          再来一次
+        </button>
+        <button
+          class="btn w-full sm:w-auto"
+          @click="handleGoToCourseList"
+        >
+          课程列表
+        </button>
+        <button
+          class="btn w-full sm:w-auto"
+          @click="goToNextCourse"
+        >
+          下一课
+          <UKbd> ↵ </UKbd>
+        </button>
+      </div>
+    </UContainer>
+  </UModal>
+
+  <canvas
+    ref="confettiCanvasRef"
+    class="pointer-events-none absolute left-0 top-0 z-[1000] h-full w-full"
+  ></canvas>
 </template>
 
 <script setup lang="ts">
-import { watch } from "vue";
-import { useRouter } from "vue-router";
-import { useActiveCourseId } from "~/composables/courses/activeCourse";
+import { useModal } from "#imports";
+import { computed, ref, watch } from "vue";
+import { toast } from "vue-sonner";
+
+import Dialog from "~/components/common/Dialog.vue";
+import { useActiveCourseMap } from "~/composables/courses/activeCourse";
 import { courseTimer } from "~/composables/courses/courseTimer";
-import { useAuthRequire } from "~/composables/main/authRequire";
 import { useConfetti } from "~/composables/main/confetti/useConfetti";
 import { readOneSentencePerDayAloud } from "~/composables/main/englishSound";
 import { useGameMode } from "~/composables/main/game";
+import { useLearningTimeTracker } from "~/composables/main/learningTimeTracker";
 import { useShareModal } from "~/composables/main/shareImage/share";
 import { useDailySentence, useSummary } from "~/composables/main/summary";
+import { useNavigation } from "~/composables/useNavigation";
+import { isAuthenticated, signIn } from "~/services/auth";
 import { useCourseStore } from "~/store/course";
-import { useUserStore } from "~/store/user";
+import { useCoursePackStore } from "~/store/coursePack";
+import { useGameStore } from "~/store/game";
+import { permitSaveStatement, preventSaveStatement } from "~/store/statement";
 import { formatSecondsToTime } from "~/utils/date";
 import { cancelShortcut, registerShortcut } from "~/utils/keyboardShortcuts";
 
-let nextCourseId = 1;
 const courseStore = useCourseStore();
+const coursePackStore = useCoursePackStore();
+const { gotoCourseList, gotoGame } = useNavigation();
+const { showQuestion } = useGameMode();
+const { handleGoToCourseList, goToNextCourse, completeCourse } = useCourse();
 const { handleDoAgain } = useDoAgain();
-const { handleGoToNextCourse } = useGoToNextCourse();
 const { showModal, hideSummary } = useSummary();
 const { zhSentence, enSentence } = useDailySentence();
 const { confettiCanvasRef, playConfetti } = useConfetti();
 const { showShareModal } = useShareModal();
+const { updateActiveCourseMap } = useActiveCourseMap();
+const { totalMinutes, formattedMinutes } = useTotalLearningTime();
+
+const gameStore = useGameStore();
+const modal = useModal();
 
 watch(showModal, (val) => {
   if (val) {
+    // 阻止包含 statement 完成课程后会自动把用户的进度设置成下一课
+    // 这里是为了防止先设置成下一课 后更新了 statement 的进度
+    // 这就会造成获取用户最近的课程包进度出现错误  因为是基于时间来获取的
+    preventSaveStatement();
     // 注册回车键进入下一课
-    registerShortcut("enter", handleGoToNextCourse);
+    registerShortcut("enter", goToNextCourse);
     // 显示结算面板代表当前课程已经完成
     completeCourse();
     // 朗读每日一句
     soundSentence();
     // 延迟一小会放彩蛋
+    // 停止计时
+    gameStore.completeLevel();
     setTimeout(async () => {
       playConfetti();
     }, 300);
   } else {
     // 取消回车键进入下一课
-    cancelShortcut("enter", handleGoToNextCourse);
-    // 从显示状态关闭结算面板
-    courseStore.resetStatementIndex();
+    cancelShortcut("enter", goToNextCourse);
+    permitSaveStatement();
   }
 });
 
-async function completeCourse() {
-  const userStore = useUserStore();
-  const { updateActiveCourseId } = useActiveCourseId();
+function useTotalLearningTime() {
+  const { totalSeconds } = useLearningTimeTracker();
+  const totalMinutes = computed(() => Math.ceil(totalSeconds.value / 60));
 
-  if (userStore.user && courseStore.currentCourse) {
-    const { nextCourse } = await courseStore.completeCourse(
-      courseStore.currentCourse.id
-    );
+  const formattedMinutes = computed(() => {
+    return Math.max(totalMinutes.value, 1).toString();
+  });
 
-    if (nextCourse) {
-      nextCourseId = nextCourse.id;
-      updateActiveCourseId(nextCourseId);
-    }
-  }
+  return {
+    totalMinutes,
+    formattedMinutes,
+  };
 }
 
 function useDoAgain() {
-  const { showQuestion } = useGameMode();
-
-  function handleDoAgain() {
+  async function handleDoAgain() {
+    // 看看是不是没有全部掌握了
+    // 如果是全部掌握了 那么给个提示 然后挑战到课程列表
+    if (courseStore.isAllMastered()) {
+      toast.info("你已经全部都掌握 自动帮你跳转到课程列表啦", {
+        duration: 1500,
+        onAutoClose: () => {
+          handleGoToCourseList();
+        },
+      });
+      return;
+    }
     courseStore.doAgain();
     hideSummary();
     showQuestion();
     courseTimer.reset();
+    gameStore.startGame();
   }
 
   return {
@@ -165,25 +201,76 @@ function soundSentence() {
   readOneSentencePerDayAloud(enSentence.value);
 }
 
-function useGoToNextCourse() {
-  const router = useRouter();
-  const userStore = useUserStore();
-  const { showAuthRequireModal } = useAuthRequire();
+function useCourse() {
+  let nextCourseId = ref("");
 
-  async function handleGoToNextCourse() {
-    // 无论后续如何处理，都需要先隐藏 Summary 页面
-    hideSummary();
-    if (!userStore.user) {
+  const haveNextCourse = computed(() => {
+    return nextCourseId.value;
+  });
+
+  async function goToNextCourse() {
+    if (!isAuthenticated()) {
       // 去注册
-      showAuthRequireModal();
+      modal.open(Dialog, {
+        title: "✨ 解锁更多学习体验",
+        content: "注册后可以进行下一课学习 记录每日学习数据 开启更多功能哦",
+        showCancel: true,
+        showConfirm: true,
+        cancelText: "稍后再说",
+        confirmText: "立即注册",
+        async onConfirm() {
+          courseStore.resetStatementIndex();
+          showQuestion();
+          signIn();
+        },
+      });
+
       return;
     }
 
-    router.push(`/main/${nextCourseId}`);
+    hideSummary();
+
+    if (!haveNextCourse.value) {
+      toast.info("已经是最后一课 自动帮你跳转到课程列表啦", {
+        duration: 1500,
+        onAutoClose: () => {
+          handleGoToCourseList();
+        },
+      });
+      return;
+    }
+
+    if (courseStore.currentCourse) {
+      gotoGame(courseStore.currentCourse.coursePackId, nextCourseId.value);
+    }
+  }
+
+  function handleGoToCourseList() {
+    hideSummary();
+    if (courseStore.currentCourse) {
+      gotoCourseList(courseStore.currentCourse.coursePackId);
+    }
+  }
+
+  async function completeCourse() {
+    if (isAuthenticated() && courseStore.currentCourse) {
+      const { coursePackId } = courseStore.currentCourse;
+      const { nextCourse } = await courseStore.completeCourse();
+      coursePackStore.updateCoursesCompleteCount(coursePackId);
+
+      if (nextCourse) {
+        nextCourseId.value = nextCourse.id;
+        updateActiveCourseMap(coursePackId, nextCourseId.value);
+      } else {
+        updateActiveCourseMap(coursePackId, "");
+      }
+    }
   }
 
   return {
-    handleGoToNextCourse,
+    completeCourse,
+    goToNextCourse,
+    handleGoToCourseList,
   };
 }
 

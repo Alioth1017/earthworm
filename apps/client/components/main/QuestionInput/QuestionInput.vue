@@ -6,16 +6,24 @@
         :key="i"
       >
         <div
-          class="h-[4rem] leading-none border-solid rounded-[2px] border-b-2 text-[3em] transition-all"
+          v-if="isWord(w)"
+          class="h-[4rem] rounded-[2px] border-b-2 border-solid text-[3em] leading-none transition-all"
           :class="getWordsClassNames(i)"
           :style="{ minWidth: `${inputWidth(w)}ch` }"
         >
-          {{ userInputWords[i]["userInput"] }}
+          {{ findWordById(i)!.userInput }}
+        </div>
+        <div
+          v-else
+          class="h-[4rem] rounded-[2px] text-[3em] leading-none transition-all"
+        >
+          {{ w }}
         </div>
       </template>
       <input
+        lang="en"
         ref="inputEl"
-        class="absolute w-full h-full opacity-0"
+        class="absolute h-full w-full opacity-0"
         type="text"
         v-model="inputValue"
         @keydown="handleKeydown"
@@ -23,71 +31,80 @@
         @blur="blurInput"
         @dblclick.prevent
         @mousedown="preventCursorMove"
+        @compositionstart="handleCompositionStart"
+        @compositionend="handleCompositionEnd"
         autoFocus
       />
+    </div>
+    <div class="mt-12 flex flex-col items-center justify-center gap-4 md:hidden">
+      <button
+        class="btn btn-outline btn-sm"
+        @click="handleSubmitAnswer"
+      >
+        提交
+      </button>
+      <div class="flex gap-4">
+        <button
+          class="btn btn-outline btn-sm"
+          @click="handleShowAnswerTip"
+        >
+          {{ isAnswerTip() ? "隐藏" : "显示" }}答案
+        </button>
+        <button
+          class="btn btn-outline btn-sm"
+          @click="handlePlaySound"
+        >
+          播放声音
+        </button>
+      </div>
+      <MainMasteredBtn></MainMasteredBtn>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onUnmounted,onMounted, watch } from "vue";
+import { onMounted, onUnmounted, ref, watch } from "vue";
+import { toast } from "vue-sonner";
+
 import { courseTimer } from "~/composables/courses/courseTimer";
 import { useAnswerTip } from "~/composables/main/answerTip";
-import { useGameMode } from "~/composables/main/game";
-import { useInput } from "~/composables/main/question";
-import { useKeyboardSound } from "~/composables/user/sound";
-import { useSpaceSubmitAnswer } from "~/composables/user/submitKey";
+import { useCurrentStatementEnglishSound } from "~/composables/main/englishSound";
+import { isWord } from "~/composables/main/question";
 import { useShowWordsWidth } from "~/composables/user/words";
 import { useCourseStore } from "~/store/course";
-import { useQuestionInput } from "./questionInput";
-import { usePlayTipSound, useTypingSound } from "./useTypingSound";
+import { isWindows } from "~/utils/platform";
+import { getWordWidth, useQuestionInput } from "./questionInputHelper";
+import { useAnswerError } from "./useAnswerError";
+import { useWrapperQuestionInput } from "./useWrapperQuestionInput";
 
 const courseStore = useCourseStore();
+const { inputEl, focusing, focusInput, blurInput } = useQuestionInput();
 const {
-  inputEl,
-  focusing,
-  focusInput,
-  blurInput,
-  setInputCursorPosition,
-  getInputCursorPosition,
-} = useQuestionInput();
-
-const { showAnswer } = useGameMode();
-const { isShowWordsWidth } = useShowWordsWidth();
-const { isUseSpaceSubmitAnswer } = useSpaceSubmitAnswer();
-const { isKeyboardSoundEnabled } = useKeyboardSound();
-const { checkPlayTypingSound, playTypingSound } = useTypingSound();
-const { playRightSound, playErrorSound } = usePlayTipSound();
-const { handleAnswerError, resetCloseTip } = answerError();
-
-const {
-  inputValue,
-  userInputWords,
-  submitAnswer,
-  setInputValue,
-  handleKeyboardInput,
+  initializeQuestionInput,
+  findWordById,
   isFixMode,
-} = useInput({
-  source: () => courseStore.currentStatement?.english!,
-  setInputCursorPosition,
-  getInputCursorPosition,
-  inputChangedCallback,
-});
-const { showAnswerTip, hiddenAnswerTip } = useAnswerTip();
+  inputValue,
+  submitAnswer,
+  handleKeyboardInput,
+  setInputValue,
+} = useWrapperQuestionInput();
+const { isShowWordsWidth } = useShowWordsWidth();
+const { toggleAnswerTip, isAnswerTip } = useAnswerTip();
+const { resetCloseTip } = useAnswerError();
+initializeQuestionInput();
+focusInputWhenWIndowFocus();
 
 onMounted(() => {
   focusInput();
   resetCloseTip();
 });
 
-focusInputWhenWIndowFocus()
-
 watch(
   () => inputValue.value,
   (val) => {
     setInputValue(val);
     courseTimer.time(String(courseStore.statementIndex));
-  }
+  },
 );
 
 watch(
@@ -95,7 +112,7 @@ watch(
   () => {
     focusInput();
     resetCloseTip();
-  }
+  },
 );
 
 function focusInputWhenWIndowFocus() {
@@ -112,8 +129,23 @@ function focusInputWhenWIndowFocus() {
   });
 }
 
+const { playSound } = useCurrentStatementEnglishSound();
+function handlePlaySound(e: MouseEvent) {
+  e.preventDefault();
+  playSound();
+}
+
+function handleShowAnswerTip(e: MouseEvent) {
+  e.preventDefault();
+  toggleAnswerTip();
+}
+
+function handleSubmitAnswer() {
+  submitAnswer();
+}
+
 function getWordsClassNames(index: number) {
-  const word = userInputWords[index];
+  const word = findWordById(index)!;
   // 当前单词激活 且 聚焦
   if (word.isActive && focusing.value) {
     return "text-fuchsia-500 border-b-fuchsia-500";
@@ -129,12 +161,6 @@ function getWordsClassNames(index: number) {
   return "text-[#20202099] border-b-gray-300 dark:text-gray-300 dark:border-b-gray-400";
 }
 
-function inputChangedCallback(e: KeyboardEvent) {
-  if (isKeyboardSoundEnabled() && checkPlayTypingSound(e)) {
-    playTypingSound();
-  }
-}
-
 // 输入宽度
 function inputWidth(word: string) {
   if (!isShowWordsWidth()) {
@@ -142,119 +168,59 @@ function inputWidth(word: string) {
     return 4;
   }
 
-  // 单词宽度
-  let width = 0;
-
-  // 单词转小写字符数组
-  word = word.toLocaleLowerCase();
-  const wordArr = word.split("");
-
-  // 字符宽度1.1的字符数组
-  const onePointOneLetters = ["u", "o", "p", "q", "n", "h", "g", "d", "b"];
-
-  // 字符宽度0.9的字符数组
-  const zeroPointNineLetters = ["z", "y", "x", "v", "c"];
-
-  for (let letter of wordArr) {
-    if (letter === "w" || letter === "m") {
-      width += 1.5;
-      continue;
-    }
-    if (letter === "s") {
-      width += 0.8;
-      continue;
-    }
-    if (letter === "t" || letter === "r" || letter === "f") {
-      width += 0.7;
-      continue;
-    }
-    if (letter === "j") {
-      width += 0.6;
-      continue;
-    }
-    if (letter === "i" || letter === "l" || letter === "'") {
-      width += 0.5;
-      continue;
-    }
-
-    // 记录是否已经增加宽度
-    let increasedWidth = false;
-
-    for (let key of onePointOneLetters) {
-      if (key === letter) {
-        width += 1.1;
-        increasedWidth = true;
-        break;
-      }
-    }
-
-    for (let key of zeroPointNineLetters) {
-      if (key === letter) {
-        width += 0.9;
-        increasedWidth = true;
-        break;
-      }
-    }
-
-    // 未增加宽度
-    if (!increasedWidth) {
-      width += 1;
-    }
-  }
-
-  // 左右留白
-  width += 1;
-
-  return width;
+  return getWordWidth(word);
 }
 
-function answerError() {
-  let wrongTimes = 0;
-
-  function handleAnswerError() {
-    playErrorSound();
-    wrongTimes++;
-    if (wrongTimes >= 3) {
-      showAnswerTip();
-    }
-  }
-
-  function resetCloseTip() {
-    wrongTimes = 0;
-    hiddenAnswerTip();
-  }
-
-  return {
-    handleAnswerError,
-    resetCloseTip,
-  };
+// // 中文输入会导致先触发 handleKeydown
+// // 但是这时候字符还没有上屏
+// // 就会造成触发 submit answer  导致明明答案正确但是不通过的问题
+// // 通过检测是否为输入法 来避免按下 enter 后直接触发 submit answer
+let isComposing = ref(false);
+function handleCompositionStart() {
+  isComposing.value = true;
 }
 
-function handleAnswerRight() {
-  playRightSound(); // 正确提示
-  showAnswer();
-  hiddenAnswerTip();
-  courseTimer.timeEnd(String(courseStore.statementIndex));
+function handleCompositionEnd() {
+  isComposing.value = false;
 }
 
 function handleKeydown(e: KeyboardEvent) {
-  if (e.code === "Enter") {
-    e.stopPropagation();
-    submitAnswer(
-      handleAnswerRight,
-      handleAnswerError // 错误提示
-    );
-
+  // 给 windows 用户添加 ctrl + backspace 删除上一个单词的快捷键
+  // 有些浏览器 input 不支持通过 ctrl + backspace 删除 所以自行扩展下
+  if (e.code === "Backspace" && e.ctrlKey && isWindows()) {
+    e.preventDefault();
+    deletePreviousWordOnWin();
     return;
   }
 
-  handleKeyboardInput(e, {
-    useSpaceSubmitAnswer: {
-      enable: isUseSpaceSubmitAnswer(),
-      rightCallback: handleAnswerRight,
-      errorCallback: handleAnswerError, // 错误提示
-    },
-  });
+  // 避免在某些中文输入法中，按下 Ctrl 键时，输入法会将当前的预输入字符上屏
+  if (e.ctrlKey) {
+    e.preventDefault();
+    return;
+  }
+
+  if (e.code === "Enter" && !isComposing.value) {
+    e.stopPropagation();
+    submitAnswer();
+    return;
+  }
+
+  handleKeyboardInput(e);
+}
+
+function deletePreviousWordOnWin() {
+  var start = inputEl.value!.selectionStart!;
+  var end = inputEl.value!.selectionEnd!;
+  if (end === 0) return;
+
+  // 删除光标前的所有连续空格
+  while (start > 0 && inputValue.value[start - 1] === " ") {
+    start--;
+  }
+  var valueToCursor = inputValue.value.substring(0, start);
+  var newEnd = valueToCursor.lastIndexOf(" ") + 1 || 0;
+  inputValue.value = inputValue.value.substring(0, newEnd);
+  inputEl.value!.setSelectionRange(newEnd, newEnd);
 }
 
 function preventCursorMove(event: MouseEvent) {

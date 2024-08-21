@@ -1,35 +1,50 @@
-import type { AxiosInstance, AxiosResponse } from "axios";
-import axios from "axios";
-import { checkHaveToken, getToken } from "~/utils/token";
-import { isProd } from "~/utils/env";
+import type { $Fetch } from "ofetch";
 
-export const http: AxiosInstance = axios.create({
-  baseURL: isProd()
-    ? "https://earthworm.cuixueshe.com/api"
-    : "http://localhost:3001",
-  timeout: 10000,
-  headers: { "Content-Type": "application/json" },
-});
+import { useRuntimeConfig } from "#app";
+import { ofetch } from "ofetch";
 
-http.interceptors.request.use((config) => {
-  if (checkHaveToken()) config.headers.Authorization = `Bearer ${getToken()}`;
+import { getToken } from "~/services/auth";
 
-  return config;
-});
+let http: $Fetch;
+export function setupHttp() {
+  if (http) return http;
 
-http.interceptors.response.use(
-  (response: AxiosResponse) => {
-    return response.data;
-  },
-  (error) => {
-    const { message } = error.response.data;
-    httpStatusErrorHandler?.(message, error.response.status);
-    return Promise.reject(error);
-  }
-);
+  const config = useRuntimeConfig();
+  const baseURL = config.public.apiBase as string;
+
+  http = ofetch.create({
+    baseURL,
+    headers: { "Content-Type": "application/json" },
+    async onRequest({ options }) {
+      const token = await getToken();
+      options.headers = { ...options.headers, Authorization: `Bearer ${token}` };
+    },
+    async onResponseError({ request, response, options }) {
+      const { message } = response._data;
+      if (Array.isArray(message)) {
+        message.forEach((item) => {
+          httpStatusErrorHandler?.(item, response.status);
+        });
+      } else {
+        httpStatusErrorHandler?.(message, response.status);
+      }
+      return Promise.reject(response._data);
+    },
+    retry: 3,
+    retryDelay: 1000,
+  });
+}
 
 type HttpStatusErrorHandler = (message: string, statusCode: number) => void;
 let httpStatusErrorHandler: HttpStatusErrorHandler;
+
 export function injectHttpStatusErrorHandler(handler: HttpStatusErrorHandler) {
   httpStatusErrorHandler = handler;
+}
+
+export function getHttp() {
+  if (!http) {
+    throw new Error("HTTP client not initialized. Call setupHttp first.");
+  }
+  return http;
 }

@@ -1,4 +1,5 @@
 import fs from "fs";
+
 import inquirer from "inquirer";
 
 export async function inquire(folderPath: string): Promise<string[]> {
@@ -16,7 +17,7 @@ export async function inquire(folderPath: string): Promise<string[]> {
         if (answers.action === "生成所有文件路径") {
           const allFiles = listAllFiles(folderPath);
           allFiles.forEach((file) => console.log(file));
-          resolve(allFiles.map(({value})=> value));
+          resolve(allFiles.map(({ value }) => value));
         } else if (answers.action === "手动选取文件") {
           const files = listAllFiles(folderPath);
           inquirer
@@ -38,7 +39,10 @@ export async function inquire(folderPath: string): Promise<string[]> {
 }
 
 function listAllFiles(folderPath) {
-  const files = fs.readdirSync(folderPath);
+  let files = fs.readdirSync(folderPath);
+  // 筛选出以 .pdf 结尾的文件
+  files = files.filter((file) => file.endsWith(".pdf"));
+
   files.sort((a, b) => {
     return parseFloat(a) - parseFloat(b);
   });

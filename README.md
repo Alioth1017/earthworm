@@ -1,18 +1,23 @@
 <div align="center">
-  <img alt="Earthworm" width="120" height="120" src="./apps/client/public/logo.png">
+  <img alt="Earthworm" width="120" height="120" src="./assets/logo/logo-1000.png">
   <h1>Earthworm</h1>
   <span>English | <a href="./README.zh-CN.md">中文</a></span>
+</div>
+
+<div align="center">
+  <br/>
+  <a href="https://hellogithub.com/repository/9433615761f548cf9648434c670cd85b" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=9433615761f548cf9648434c670cd85b&claim_uid=249cPWvjfNmU7dp" alt="Featured｜HelloGitHub" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 </div>
 
 ## ⚡ Introduction
 
 By constructing sentences with conjunctions, it helps you learn English better~ 😊
 
-## 🚀 How To Start ?
+## 🚀 How To Start?
 
 **The mentioned operations below are based on the root directory of the current project, please be attentive to ensure there are no errors!**
 
-### 0. Requirements
+### Requirements
 
 - **pnpm version >= 8**
 
@@ -22,7 +27,7 @@ By constructing sentences with conjunctions, it helps you learn English better~ 
 
 - **Node.js version >= v20**
   > Use the version from .node-version. [Supported tools](https://github.com/shadowspawn/node-version-usage#compatibility-testing)
-- **MySQL version >= 8.0.0**
+- **Postgres version >= 14.0.0**
 - **Redis version >= 5.0.0**
 - **Docker**. please make sure it is installed and running successfully on your local machine.
 
@@ -34,6 +39,12 @@ node --version # v20+
 pnpm -v # 8+
 ```
 
+### Editor
+
+#### VSCode
+
+- Install the recommended extensions [extensions.json](./.vscode/extensions.json)
+
 ### 1. Install Dependencies
 
 ```bash
@@ -42,17 +53,39 @@ pnpm install
 
 ### 2. Configure the `.env` File
 
-You can choose to copy the contents of `./apps/api/.env.example` to`./apps/api/.env`. note that the' example' file contains sample configuration. the main storage system's environment variable information, such as database connection address, user name, password, port, key, etc. the back-end service will read the configuration from this file, **of course you can also change it to your own configuration information**
+You can choose to copy the contents of `./apps/api/.env.example` to`./apps/api/.env`. note that the' example' file contains sample configuration. the main storage system's environment variable information, such as database connection address, user name, password, port, key, etc. the back-end service will read the configuration from this file, **of course you can also change it to your own configuration information**.
 
-Windows users recommend shortcut keys to copy and paste, Linux users can operate through the following command
+Windows users recommend shortcut keys to copy and paste, Linux users can operate through the following command.
+
+#### Server
 
 ```bash
 cp ./apps/api/.env.example ./apps/api/.env
 ```
 
-### 3. Start Docker Compose Service
+#### Client
 
-The backend relies on MySQL and Redis services. Start and stop these services using the commands configured in `package.json` below.
+```bash
+cp ./apps/client/.env.example ./apps/client/.env
+```
+
+### 3. Restore Data Of Logto
+
+Uncompress `logto_db_init_data.zip` to `.volumes/`
+
+```bash
+unzip logto_db_init_data.zip -d .volumes/
+```
+
+- Admin URL: http://localhost:3011
+- Username: admin
+- Password: WkN7g5-i8ZrJckX
+
+> if you want to [Manual Configuration Logto](https://github.com/cuixueshe/earthworm/wiki/%E8%BF%81%E7%A7%BB-Logto-%E7%94%A8%E6%88%B7%E7%B3%BB%E7%BB%9F%E5%90%8E%E6%9C%AC%E5%9C%B0%E5%90%AF%E5%8A%A8%E9%85%8D%E7%BD%AE%E6%96%B9%E6%A1%88%EF%BC%88%E8%B4%A1%E7%8C%AE%E8%80%85%EF%BC%89)
+
+### 4. Start Docker Compose Service
+
+The backend relies on Postgres and Redis services. Start and stop these services using the commands configured in `package.json` below.
 
 ```bash
 # start
@@ -78,7 +111,7 @@ docker compose down
 docker-compose up -d
 ```
 
-### 4. Initialize Database Schema
+### 5. Initialize Database Schema
 
 When executing this command, try to keep a little time from the previous command, because the `-d` parameter just used will suspend its service execution in the background. At this time, the docker service may still be running. If an error is found, execute it again.
 
@@ -86,29 +119,29 @@ When executing this command, try to keep a little time from the previous command
 pnpm db:init
 ```
 
-### 5. Create and Upload Course Data
+### 6. Create and Upload Course Data
 
-**Only Execute This During the Initial Database Initialization**
+**Only Execute This During the Initial Database Initialization**.
 
 ```bash
 pnpm db:upload
 ```
 
-### 6. Start the Backend Service
+### 7. Start the Backend Service
 
 ```bash
 pnpm dev:serve
 ```
 
-### 7. Start the Frontend Service
+### 8. Start the Frontend Service
 
 ```bash
 pnpm dev:client
 ```
 
-## ⚒ About testing
+## 🛠️ About testing
 
-**Run the test before submitting the commit, and submit the code after the test passes, so as to avoid multiple commits to solve the test problem**
+**Run the test before submitting the commit, and submit the code after the test passes, so as to avoid multiple commits to solve the test problem**.
 
 ### Front-end Testing
 
@@ -129,10 +162,10 @@ pnpm test:unit:watch
 
 ### Backend Testing
 
-Mainly Jest single test and end-to-end test, but need to access the test database, so you need to ensure that
+Mainly Jest single test and end-to-end test, but need to access the test database, so you need to ensure that:
 
-1. testdb and testRedis services in Docker Compose started normally
-2. The configuration information in the `.env.test` file is correct. If there is no such file, you can copy the contents of the `apps/api/.env.example` file to the `apps/api/.env.test` file. The following command is provided to directly use
+1. testdb and testRedis services in Docker Compose started normally.
+2. The configuration information in the `.env.test` file is correct. If there is no such file, you can copy the contents of the `apps/api/.env.test.example` file to the `apps/api/.env.test` file. The following command is provided to directly use.
 
 Execute the following command:
 
@@ -144,11 +177,20 @@ cd apps/api
 cp .env.test.example .env.test
 
 # Single test
-pnpm test:unit:run
+pnpm test:unit
 # End-to-end testing
-pnpm test:e2e:run
+pnpm test:e2e
 # Single test and end-to-end test run together
 pnpm test
+```
+
+## Docs Project
+
+Project based on Vitepress documentation，execute the following command:
+
+```bash
+# Local Development
+pnpm docs:dev
 ```
 
 ## ❓ FAQ
@@ -159,7 +201,7 @@ My Docker and the database inside are running normally, but when I run the `db:i
 
 You can check whether the database configuration in the `.env` file is correct, or even whether this file has it! 😠
 
-### How To Correctly Update Course Data ?
+### How To Correctly Update Course Data?
 
 when you identify incorrect course data and make modifications, you should use the following command to update the course data in the database.
 
@@ -173,7 +215,7 @@ Some dependencies require compilation during installation, necessitating the pre
 If these environments are not available, the compilation process may fail. Additionally, different modules may require different build environments, so specific issues need to be analyzed individually.
 Below are specific problems encountered along with their solutions.
 
-First try the following command to update `pnpm`
+First try the following command to update `pnpm`.
 
 ```shell
 pnpm i -g
@@ -214,11 +256,18 @@ docker images
 ## 🤝 Frontend Development Guideline
 
 1. Do not Destructure Pinia store.
+
    - The readability will be better when using `store`
    - Destructuring can lead to reactivity loss and using `storeToRefs` is also quite cumbersome
+
 2. Avoid including UI logic in composables.
-   1. Such as `useMessage`
-   2. We categorize the router as UI logic, and for ease of testing, avoid including routerrelated logic in there
+
+   - Such as `toast.info()`
+   - We categorize the router as UI logic, and for ease of testing, avoid including routerrelated logic in there
+
+## 🚀 Star History
+
+[![Stargazers over time](https://starchart.cc/cuixueshe/earthworm.svg?variant=adaptive)](https://starchart.cc/cuixueshe/earthworm)
 
 ## 🌟 Contributing
 

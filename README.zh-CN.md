@@ -1,7 +1,12 @@
 <div align="center">
-  <img alt="Earthworm" width="120" height="120" src="./apps/client/public/logo.png">
+  <img alt="Earthworm" width="120" height="120" src="./assets/logo/logo-1000.png">
   <h1>Earthworm</h1>
-  <span>中文 | <a href="./README.md">英文</a></span>
+  <span>中文 | <a href="./README.md">English</a></span>
+</div>
+
+<div align="center">
+  <br/>
+  <a href="https://hellogithub.com/repository/9433615761f548cf9648434c670cd85b" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=9433615761f548cf9648434c670cd85b&claim_uid=249cPWvjfNmU7dp" alt="Featured｜HelloGitHub" style="width: 250px; height: 54px;" width="250" height="54" /></a>
 </div>
 
 ## ⚡ 介绍
@@ -12,7 +17,7 @@
 
 **以下所有相关操作都基于项目根目录位置，请注意检查不要出错！**
 
-### 0. 注意事项
+### 注意事项
 
 - **pnpm version >= 8**
 
@@ -22,9 +27,15 @@
 
 - **Node.js version >= v20**
   > 使用来自 .node-version 的版本 [支持的工具](https://github.com/shadowspawn/node-version-usage#compatibility-testing)
-- **MySQL version >= 8.0.0**
+- **Postgres version >= 8.0.0**
 - **Redis version >= 5.0.0**
 - 项目依赖 **Docker**，所以请确保你本地已安装并成功运行
+
+### 编辑器
+
+#### VSCode
+
+- 安装推荐的插件 [extensions.json](./.vscode/extensions.json)
 
 ```bash
 docker --version # Docker version 24.0.7, build afdd53b
@@ -42,17 +53,39 @@ pnpm install
 
 ### 2. 配置 `.env` 文件
 
-可以选择将 `./apps/api/.env.example` 文件内容复制到 `./apps/api/.env`，请注意 `example` 文件中的是示例配置，主要是一些系统的环境变量信息，比如：数据库连接地址、用户名、密码、端口、密钥等等，后端服务会从此文件中读取配置信息，**当然你也可以更改成你自己的配置信息**
+可以选择将 `./apps/api/.env.example` 文件内容复制到 `./apps/api/.env`，请注意 `example` 文件中的是示例配置，主要是一些系统的环境变量信息，比如：数据库连接地址、用户名、密码、端口、密钥等等，后端服务会从此文件中读取配置信息，**当然你也可以更改成你自己的配置信息**。
 
-Windows 用户推荐快捷键复制粘贴，Linux 用户可以通过下面的命令进行操作
+Windows 用户推荐快捷键复制粘贴，Linux 用户可以通过下面的命令进行操作。
+
+#### Server
 
 ```bash
 cp ./apps/api/.env.example ./apps/api/.env
 ```
 
-### 3. 启动 Docker Compose 服务
+#### Client
 
-后端用到了 MySQL 和 Redis 服务，通过下面在 `package.json` 中配置的命令启动和停止
+```bash
+cp ./apps/client/.env.example ./apps/client/.env
+```
+
+### 3. 恢复 Logto 的数据
+
+解压缩 `logto_db_init_data.zip` 到 `.volumes/`
+
+```bash
+unzip logto_db_init_data.zip -d .volumes/
+```
+
+- 后台地址: http://localhost:3011
+- 用户名: admin
+- 密码: WkN7g5-i8ZrJckX
+
+> 如果你想 [手动配置 Logto](https://github.com/cuixueshe/earthworm/wiki/%E8%BF%81%E7%A7%BB-Logto-%E7%94%A8%E6%88%B7%E7%B3%BB%E7%BB%9F%E5%90%8E%E6%9C%AC%E5%9C%B0%E5%90%AF%E5%8A%A8%E9%85%8D%E7%BD%AE%E6%96%B9%E6%A1%88%EF%BC%88%E8%B4%A1%E7%8C%AE%E8%80%85%EF%BC%89)
+
+### 4. 启动 Docker Compose 服务
+
+后端用到了 Postgres 和 Redis 服务，通过下面在 `package.json` 中配置的命令启动和停止。
 
 ```bash
 # 启动
@@ -78,37 +111,37 @@ docker compose down
 docker-compose up -d
 ```
 
-### 4. 初始化数据库表结构
+### 5. 初始化数据库表结构
 
-执行这个命令时，尽量与上个命令间隔一点时间，因为刚刚使用的 `-d` 参数会让其服务挂起在后台执行，此时 docker 服务可能还在 running 中，若是发现报错了那就再执行一遍 😊
+执行这个命令时，尽量与上个命令间隔一点时间，因为刚刚使用的 `-d` 参数会让其服务挂起在后台执行，此时 docker 服务可能还在 running 中，若是发现报错了那就再执行一遍。😊
 
 ```bash
 pnpm db:init
 ```
 
-### 5. 创建并上传课程数据
+### 6. 创建并上传课程数据
 
-**只有第一次初始化数据库后需要执行**
+**只有第一次初始化数据库后需要执行**。
 
 ```bash
 pnpm db:upload
 ```
 
-### 6. 启动后端服务
+### 7. 启动后端服务
 
 ```bash
 pnpm dev:serve
 ```
 
-### 7. 启动前端服务
+### 8. 启动前端服务
 
 ```bash
 pnpm dev:client
 ```
 
-## ⚒ 关于测试
+## 🛠️ 关于测试
 
-**提交 commit 前先跑测试，测试通过后再提交代码，以免产生多次 commit 来解决测试问题的情况出现**
+**提交 commit 前先跑测试，测试通过后再提交代码，以免产生多次 commit 来解决测试问题的情况出现**。
 
 ### 前端测试
 
@@ -129,10 +162,10 @@ pnpm test:unit:watch
 
 ### 后端测试
 
-主要就是 Jest 的单测和端对端测试，但需要接入测试的数据库，所以需要先确保
+主要就是 Jest 的单测和端对端测试，但需要接入测试的数据库，所以需要先确保：
 
-1. Docker Compose 中的 testdb 和 testRedis 服务正常启动
-2. `.env.test` 文件中的配置信息是正确的，如果没有这个文件，可以复制 `apps/api/.env.example` 文件内容到 `apps/api/.env.test` 文件，下面有提供命令直接用
+1. Docker Compose 中的 testdb 和 testRedis 服务正常启动。
+2. `.env.test` 文件中的配置信息是正确的，如果没有这个文件，可以复制 `apps/api/.env.test.example` 文件内容到 `apps/api/.env.test` 文件，下面有提供命令直接用。
 
 执行以下命令：
 
@@ -144,24 +177,33 @@ cd apps/api
 cp .env.test.example .env.test
 
 # 单测
-pnpm test:unit:run
+pnpm test:unit
 # 端对端测试
-pnpm test:e2e:run
+pnpm test:e2e
 # 单测和端对端测试一起跑
 pnpm test
+```
+
+## 文档项目
+
+基于Vitepress文档的项目，执行以下命令：
+
+```bash
+# 本地开发
+pnpm docs:dev
 ```
 
 ## ❓ 常见问题解答
 
 ### 数据库连接不上
 
-我的 Docker 和里面的数据库都正常跑起来了，但是跑 `db:init` 命令时还是报错，提示数据库连接失败
+我的 Docker 和里面的数据库都正常跑起来了，但是跑 `db:init` 命令时还是报错，提示数据库连接失败。
 
 可以检查下 `.env` 文件中的数据库配置是否正确，甚至是这个文件有没有！😠
 
 ### 如何正确的更新课程数据？
 
-当你发现有错误的课程数据并修改后，应当使用下面的命令将课程数据更新到数据库中
+当你发现有错误的课程数据并修改后，应当使用下面的命令将课程数据更新到数据库中。
 
 ```bash
 pnpm db:update
@@ -172,7 +214,7 @@ pnpm db:update
 某些依赖模块需要编译安装，因此需要相关编译环境。如果没有对应环境则会编译失败， 且不同模块所需编译环境不同，因此具体问题需要具体分析。
 以下列出已经碰到过的具体问题。
 
-先尝试使用下面的命令更新 `pnpm`
+先尝试使用下面的命令更新 `pnpm`。
 
 ```shell
 pnpm i -g
@@ -213,15 +255,24 @@ docker images
 ## 🤝 前端开发规范
 
 1. 不要解构 pinia 的 store
+
    - 解构会导致响应式丢失问题（ref 类型也会变成普通类型）
      - 使用 storeToRefs 非常的麻烦
    - 带上 store 代码可读性也会更好一点 一眼就能知道数据的来源是哪里
+
 2. composables 里面不要包含 UI 逻辑
-   1. useMessage 之类的
-   2. router 相关的也不要放进去（不便于测试 我们把 router 划分为 UI 逻辑）
+
+   - Such as `toast.info()`
+   - router 相关的也不要放进去（不便于测试 我们把 router 划分为 UI 逻辑）
+
+## 🚀 星路历程
+
+[![Stargazers over time](https://starchart.cc/cuixueshe/earthworm.svg?variant=adaptive)](https://starchart.cc/cuixueshe/earthworm)
 
 ## 🌟 贡献者
 
 在此感谢所有为 Earthworm 做出过贡献的人！🎉
 
 <a href="https://github.com//cuixueshe/earthworm/graphs/contributors"><img src="https://contributors.nn.ci/api?repo=cuixueshe/earthworm" /></a>
+
+<a href="https://hellogithub.com/repository/9433615761f548cf9648434c670cd85b" target="_blank"><img src="https://abroad.hellogithub.com/v1/widgets/recommend.svg?rid=9433615761f548cf9648434c670cd85b&claim_uid=249cPWvjfNmU7dp" alt="Featured｜HelloGitHub" style="width: 250px; height: 54px;" width="250" height="54" /></a>

@@ -1,19 +1,18 @@
 <template>
   <div class="text-center">
-    <div class="ml-8 text-5xl text-fuchsia-500 dark:text-gray-50">
-      {{ courseStore.currentStatement?.english }}
-      <svg
-        class="inline-block ml-1 cursor-pointer w-7 h-7"
-        viewBox="0 0 1024 1024"
-        version="1.1"
-        xmlns="http://www.w3.org/2000/svg"
-        @click="handlePlaySound"
+    <div class="ml-8 inline-flex flex-wrap items-center justify-center gap-1 text-5xl">
+      <span
+        v-for="word in words"
+        :key="word"
+        class="cursor-pointer p-1 hover:text-fuchsia-500"
+        @click="handlePlayWordSound(word)"
+        >{{ word }}</span
       >
-        <path
-          d="M342.4 384H128v256h214.4L576 826.8V197.2L342.4 384zM64 320h256L640 64v896L320 704H64V320z m640 256h256v-64H704v64z m16.8 159.5l181 181 45.3-45.3-181-181-45.3 45.3z m33.9-343.9l181-181-45.3-45.3-181 181 45.3 45.3z"
-          fill="#666666"
-        ></path>
-      </svg>
+      <UIcon
+        name="i-ph-speaker-simple-high"
+        class="ml-1 inline-block h-7 w-7 cursor-pointer text-gray-500 hover:text-fuchsia-500"
+        @click="handlePlayEnglishSound"
+      ></UIcon>
     </div>
     <div class="my-6 text-xl text-gray-500">
       {{ courseStore.currentStatement?.soundmark }}
@@ -21,36 +20,49 @@
     <div class="my-6 text-xl text-gray-500">
       {{ courseStore.currentStatement?.chinese }}
     </div>
-    <button
-      class="btn-item"
-      @click="showQuestion"
-    >
-      again
-    </button>
-    <button
-      class="ml-5 btn-item"
-      @click="goToNextQuestion"
-    >
-      next
-    </button>
+    <div class="space-y-3">
+      <div>
+        <button
+          class="btn btn-outline btn-sm"
+          @click="showQuestion"
+        >
+          再来一次
+        </button>
+        <button
+          class="btn btn-outline btn-sm ml-6"
+          @click="goToNextQuestion"
+        >
+          下一题
+        </button>
+      </div>
+      <div class="md:hidden">
+        <MainMasteredBtn></MainMasteredBtn>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { onMounted, onUnmounted } from "vue";
+import { computed, onMounted, onUnmounted } from "vue";
+
 import { useCurrentStatementEnglishSound } from "~/composables/main/englishSound";
+import { usePlayWordSound } from "~/composables/main/englishSound/audio";
 import { useGameMode } from "~/composables/main/game";
-import { useSummary } from "~/composables/main/summary";
 import { useAutoPronunciation } from "~/composables/user/sound";
 import { useCourseStore } from "~/store/course";
 import { cancelShortcut, registerShortcut } from "~/utils/keyboardShortcuts";
+import { useAnswer } from "./QuestionInput/useAnswer";
 
 const courseStore = useCourseStore();
-registerShortcutKeyForNextQuestion();
-const { handlePlaySound } = usePlayEnglishSound();
-const { showSummary } = useSummary();
+const { handlePlayWordSound } = usePlayWordSound();
+const { handlePlayEnglishSound } = usePlayEnglishSound();
 const { showQuestion } = useGameMode();
 const { isAutoPlaySound } = useAutoPronunciation();
+const { goToNextQuestion } = useAnswer();
+
+const words = computed(() => courseStore.currentStatement?.english.split(" "));
+
+registerShortcutKeyForNextQuestion();
 
 function usePlayEnglishSound() {
   const { playSound } = useCurrentStatementEnglishSound();
@@ -61,12 +73,12 @@ function usePlayEnglishSound() {
     }
   });
 
-  function handlePlaySound() {
+  function handlePlayEnglishSound() {
     playSound();
   }
 
   return {
-    handlePlaySound,
+    handlePlayEnglishSound,
   };
 }
 
@@ -85,20 +97,4 @@ function registerShortcutKeyForNextQuestion() {
     cancelShortcut("enter", handleKeydown);
   });
 }
-
-function goToNextQuestion() {
-  if (courseStore.isAllDone()) {
-    showSummary();
-    return;
-  }
-
-  courseStore.toNextStatement();
-  showQuestion();
-}
 </script>
-
-<style scoped>
-.btn-item {
-  @apply btn btn-sm text-xl text-gray-500 bg-gray-100 hover:text-gray-100 hover:bg-gray-500 dark:text-white dark:bg-gray-500 dark:hover:text-white dark:hover:bg-fuchsia-500 shadow-md;
-}
-</style>

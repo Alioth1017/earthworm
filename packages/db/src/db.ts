@@ -1,20 +1,17 @@
-import dotenv from 'dotenv';
-import { drizzle } from 'drizzle-orm/mysql2';
-import * as mysql from 'mysql2/promise';
-import path from 'node:path';
+import path from "node:path";
 
-dotenv.config({ path: path.resolve(__dirname, "../../../apps/api/.env") });
+import dotenv from "dotenv";
+import { drizzle } from "drizzle-orm/postgres-js";
+import postgres from "postgres";
 
-const connection = mysql.createPool({
-  uri: process.env.DATABASE_URL,
-  multipleStatements: true,
-  waitForConnections: true,
-  connectionLimit: 10,
-  maxIdle: 10,
-  idleTimeout: 60000,
-  queueLimit: 0,
-  enableKeepAlive: true,
-  keepAliveInitialDelay: 0,
+import { schemas } from "@earthworm/schema";
+
+const envName = process.env.NODE_ENV === "prod" ? ".env.prod" : ".env";
+dotenv.config({ path: path.resolve(__dirname, `../../../apps/api/${envName}`) });
+
+console.log("connection string: ", process.env.DATABASE_URL);
+const connection = postgres(process.env.DATABASE_URL ?? "");
+
+export const db = drizzle(connection, {
+  schema: schemas,
 });
-
-export const db = drizzle(connection);

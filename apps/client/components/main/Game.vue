@@ -1,30 +1,37 @@
 <template>
-  <template v-if="currentGameMode === GameMode.Dictation">
-    <DictationMode></DictationMode>
+  <template v-if="isDictationMode()">
+    <ModeDictationMode />
   </template>
-  <template v-else-if="currentGameMode === GameMode.ChineseToEnglish">
-    <ChineseToEnglishMode></ChineseToEnglishMode>
+  <template v-else-if="isChineseToEnglishMode()">
+    <ModeChineseToEnglishMode />
   </template>
-  <Tips></Tips>
-  <Summary></Summary>
-  <Share></Share>
-  <AuthRequired></AuthRequired>
+
+  <MainLearningTimer v-if="isAuthenticated()"></MainLearningTimer>
+  <MainTips />
+  <MainSummary />
+  <MainShare />
+  <GamePauseModal v-if="isAuthenticated()"></GamePauseModal>
+  <MainGameSettingModal />
 </template>
 
 <script setup lang="ts">
-import { onMounted } from "vue";
-import ChineseToEnglishMode from "~/components/mode/chineseToEnglish/ChineseToEnglishMode.vue";
-import DictationMode from "~/components/mode/dictation/DictationMode.vue";
-import { courseTimer } from "~/composables/courses/courseTimer";
-import AuthRequired from "./AuthRequired.vue";
-import Share from "./Share.vue";
-import Summary from "./Summary.vue";
-import Tips from "./Tips.vue";
-import { useGameMode, GameMode } from "~/composables/user/gameMode";
+import { onMounted, onUnmounted } from "vue";
 
-const { currentGameMode } = useGameMode();
+import GamePauseModal from "~/components/main/GamePauseModal.vue";
+import { courseTimer } from "~/composables/courses/courseTimer";
+import { useGamePlayMode } from "~/composables/user/gamePlayMode";
+import { isAuthenticated } from "~/services/auth";
+import { useGameStore } from "~/store/game";
+
+const { isChineseToEnglishMode, isDictationMode } = useGamePlayMode();
+const gameStore = useGameStore();
 
 onMounted(() => {
   courseTimer.reset();
+  gameStore.startGame();
+});
+
+onUnmounted(() => {
+  gameStore.exitGame();
 });
 </script>

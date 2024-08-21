@@ -43,20 +43,12 @@ function findMatchingShortcut(event: KeyboardEvent): Shortcut[] {
   });
 }
 
-export function parseShortcutKeys(
-  shortcutKeys: string,
-  separator: string = "+"
-) {
+export function parseShortcutKeys(shortcutKeys: string, separator: string = "+") {
   // 如果只有一个字符的 key，将其转换为大写显示
-  return shortcutKeys
-    .split(separator)
-    .map((key) => (key.length === 1 ? key.toUpperCase() : key));
+  return shortcutKeys.split(separator).map((key) => (key.length === 1 ? key.toUpperCase() : key));
 }
 
-export function createShortcut(
-  key: string,
-  command: Shortcut["command"]
-): Shortcut {
+export function createShortcut(key: string, command: Shortcut["command"]): Shortcut {
   return {
     ...parseKey(key),
     command,
@@ -71,22 +63,30 @@ export function registerShortcut(key: string, command: Shortcut["command"]) {
 
 export function cancelShortcut(key: string, command: Shortcut["command"]): void;
 export function cancelShortcut(shortcut: Shortcut): void;
-export function cancelShortcut(
-  keyOrShortcut: string | Shortcut,
-  command?: Shortcut["command"]
-) {
-  function normalizeShortcut() {
-    let normalShortcut: Shortcut;
-    if (typeof keyOrShortcut === "string" && command) {
-      normalShortcut = createShortcut(keyOrShortcut, command);
-    } else {
-      normalShortcut = keyOrShortcut as Shortcut;
+export function cancelShortcut(key: string): void;
+export function cancelShortcut(keyOrShortcut: string | Shortcut, command?: Shortcut["command"]) {
+  function normalizeShortcut(): Shortcut | Partial<Shortcut> {
+    if (typeof keyOrShortcut === "object") {
+      return keyOrShortcut;
     }
-
-    return normalShortcut;
+    return command ? createShortcut(keyOrShortcut, command) : parseKey(keyOrShortcut);
   }
 
   let normalShortcut = normalizeShortcut();
+
+  if (typeof keyOrShortcut === "string" && !command) {
+    // 如果只传了 key，删除所有匹配的快捷键
+    for (let i = shortcuts.length - 1; i >= 0; i--) {
+      if (
+        shortcuts[i].key === normalShortcut!.key &&
+        shortcuts[i].ctrlKey === normalShortcut!.ctrlKey &&
+        shortcuts[i].metaKey === normalShortcut!.metaKey
+      ) {
+        shortcuts.splice(i, 1);
+      }
+    }
+    return;
+  }
 
   const index = shortcuts.findIndex(({ key, command, ctrlKey, metaKey }) => {
     // 精准匹配对应快捷键对象

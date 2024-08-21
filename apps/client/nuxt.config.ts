@@ -17,27 +17,43 @@ function addClarity() {
 }
 
 export default defineNuxtConfig({
-  css: ["~/assets/css/globals.css"],
   ssr: false,
-  devtools: { enabled: true },
-  modules: [
-    "@nuxtjs/tailwindcss",
-    "@vueuse/nuxt",
-    "@nuxt/image",
-    "@nuxt/test-utils/module",
-  ],
-  app: {
-    head: {
-      title: "earthworm",
-      link: [{ rel: "icon", type: "image/x-icon", href: "/logo.png" }],
-      script: appScripts,
-    },
-  },
+  // default is true, reference to https://nuxt.com/docs/guide/directory-structure/components
+  // components: true,
   imports: {
     autoImport: false,
   },
-  components: true,
-  plugins: [
-    '~/plugins/globalComponents.ts'
-  ]
+  devtools: {
+    enabled: true,
+  },
+  app: {
+    head: {
+      title: "Earthworm",
+      link: [{ rel: "icon", href: "/favicon.ico" }],
+      script: appScripts,
+    },
+  },
+  css: ["~/assets/css/globals.css"],
+  modules: [
+    "@nuxt/ui",
+    "@vueuse/nuxt",
+    "@nuxt/test-utils/module",
+    "@hypernym/nuxt-anime",
+    "@nuxt/image",
+  ],
+  plugins: ["~/plugins/logto.ts", "~/plugins/http.ts"],
+  runtimeConfig: {
+    public: {
+      apiBase: process.env.API_BASE || "",
+      endpoint: process.env.LOGTO_ENDPOINT || "",
+      appId: process.env.LOGTO_APP_ID || "",
+      backendEndpoint: process.env.BACKEND_ENDPOINT || "",
+      signInRedirectURI: process.env.LOGTO_SIGN_IN_REDIRECT_URI || "",
+      signOutRedirectURI: process.env.LOGTO_SIGN_OUT_REDIRECT_URI || "",
+      helpDocsURL: process.env.HELP_DOCS_URL || "",
+    },
+  },
+  build: {
+    transpile: ["vue-sonner"],
+  },
 });

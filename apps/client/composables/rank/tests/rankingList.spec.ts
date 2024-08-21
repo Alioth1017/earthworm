@@ -1,38 +1,34 @@
 import { createPinia, setActivePinia } from "pinia";
 import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
-import { fetchProgressRank, type ProgressRankVo } from "~/api/rank";
+
+import type { ProgressRank } from "~/types";
+import { fetchProgressRank } from "~/api/rank";
 import { cacheRanking, useRanking } from "../rankingList";
 
-const weeklyList: ProgressRankVo = {
+const weeklyList: ProgressRank = {
   list: [{ username: "user1", count: 1 }],
   self: { username: "user1", count: 1, rank: 1 },
   period: "weekly",
 };
 
-const monthlyList: ProgressRankVo = {
+const monthlyList: ProgressRank = {
   list: [{ username: "user2", count: 2 }],
   self: { username: "user2", count: 2, rank: 1 },
   period: "monthly",
 };
 
-const yearlyList: ProgressRankVo = {
+const yearlyList: ProgressRank = {
   list: [{ username: "user3", count: 3 }],
   self: { username: "user3", count: 3, rank: 1 },
   period: "yearly",
 };
 
-function rankList(period: string): ProgressRankVo {
-  return period === "weekly"
-    ? weeklyList
-    : period === "monthly"
-      ? monthlyList
-      : yearlyList;
+function rankList(period: string): ProgressRank {
+  return period === "weekly" ? weeklyList : period === "monthly" ? monthlyList : yearlyList;
 }
 
 vi.mock("~/api/rank");
-vi.mocked(fetchProgressRank).mockImplementation(async (period = "weekly") =>
-  rankList(period)
-);
+vi.mocked(fetchProgressRank).mockImplementation(async (period = "weekly") => rankList(period));
 
 describe("rank list", () => {
   beforeEach(() => {
@@ -123,7 +119,7 @@ describe("rank list", () => {
   });
 });
 
-function expectRankPeriod(period: string, periodList: ProgressRankVo) {
+function expectRankPeriod(period: string, periodList: ProgressRank) {
   const rankingStore = useRanking();
 
   expect(rankingStore.currentPeriod).toBe(period);

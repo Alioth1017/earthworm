@@ -1,24 +1,26 @@
-import { http } from "./http";
+import type { ProgressRank } from "~/types/models/rank";
+import { getHttp } from "./http";
 
-export type RankingSelfType = {
+export type RankingSelfApiResponse = {
   username: string;
   count: number;
   rank: number;
 };
 
-export type RankingItemType = {
+export type RankingItemApiResponse = {
   username: string;
   count: number;
 };
 
-export interface ProgressRankVo {
-  list: RankingItemType[];
-  self: RankingSelfType | null;
+export interface ProgressRankApiResponse {
+  list: RankingItemApiResponse[];
+  self: RankingSelfApiResponse | null;
   period: string;
 }
 
 export async function fetchProgressRank(period: string = "weekly") {
-  return await http.get<ProgressRankVo, ProgressRankVo>(
-    `/rank/progress/${period}`
-  );
+  const http = getHttp();
+  return (await http<ProgressRankApiResponse>(`/rank/progress/${period}`, {
+    method: "get",
+  })) as ProgressRank;
 }

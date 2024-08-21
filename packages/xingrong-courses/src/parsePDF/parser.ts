@@ -1,4 +1,3 @@
-
 const STARTSIGN = "中文 英文 K.K.音标";
 const ENDSIGN = "中文 原形 第三人称单数 过去式 ing形式";
 export function parse(text: string) {
@@ -53,8 +52,7 @@ export function parse(text: string) {
           i++;
         }
 
-        const { english, soundmark } =
-          parseEnglishAndSoundmark(englishAndSoundmark);
+        const { english, soundmark } = parseEnglishAndSoundmark(englishAndSoundmark);
 
         data.english = english;
         data.soundmark = soundmark;
@@ -72,7 +70,8 @@ export function parse(text: string) {
 }
 
 function isChinese(str: string) {
-  const reg = /^[\u4e00-\u9fa5]/;
+  // 只要里面有中文的话  那么就作为 chinese 部分
+  const reg = /[\u4e00-\u9fa5]/;
   return reg.test(str);
 }
 

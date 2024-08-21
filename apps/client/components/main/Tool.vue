@@ -1,192 +1,173 @@
 <template>
   <div
-    class="relative flex items-center py-3 border-t border-b border-solid border-slate-200 text-base"
+    class="relative flex items-center justify-between border-t border-solid border-gray-300 pb-3 pt-4 text-base dark:border-gray-600"
   >
-    <div class="link-item">
-      <NuxtLink href="/courses">
-        <svg
-          class="h-7 w-7"
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-        >
-          <g
-            fill="none"
-            stroke="currentColor"
-            stroke-linecap="round"
-            stroke-width="2"
-          >
-            <path
-              stroke-dasharray="10"
-              stroke-dashoffset="10"
-              d="M17 9L20 12L17 15"
-            >
-              <animate
-                fill="freeze"
-                attributeName="stroke-dashoffset"
-                begin="0.6s"
-                dur="0.2s"
-                values="10;0"
-              />
-            </path>
-            <path
-              stroke-dasharray="16"
-              stroke-dashoffset="16"
-              d="M5 5H19"
-            >
-              <animate
-                fill="freeze"
-                attributeName="stroke-dashoffset"
-                dur="0.2s"
-                values="16;0"
-              />
-            </path>
-            <path
-              stroke-dasharray="12"
-              stroke-dashoffset="12"
-              d="M5 12H14"
-            >
-              <animate
-                fill="freeze"
-                attributeName="stroke-dashoffset"
-                begin="0.2s"
-                dur="0.2s"
-                values="12;0"
-              />
-            </path>
-            <path
-              stroke-dasharray="16"
-              stroke-dashoffset="16"
-              d="M5 19H19"
-            >
-              <animate
-                fill="freeze"
-                attributeName="stroke-dashoffset"
-                begin="0.4s"
-                dur="0.2s"
-                values="16;0"
-              />
-            </path>
-          </g>
-        </svg>
-      </NuxtLink>
-    </div>
-    <div class="ml-4 mr-1 text-gray-400">
-      {{ coursesStore.currentCourse?.title }}
-    </div>
-    <div
-      class="link-item"
-      @click="toggleContents"
-    >
-      （{{ currentSchedule }}<span class="mx-[2px]">/</span
-      >{{ courseStore.totalQuestionsCount }}）
-    </div>
-    <StudyVideoLink :course-id="courseStore.currentCourse?.id" />
-    <div class="flex-1"></div>
-    <div
-      @click="handleDoAgain"
-      class="link-item mr-4"
-    >
-      <svg
-        class="icon-item"
-        xmlns="http://www.w3.org/2000/svg"
-        width="1em"
-        height="1em"
-        viewBox="0 0 32 32"
+    <!-- 左侧 -->
+    <div class="flex items-center">
+      <NuxtLink
+        class="clickable-item flex items-center justify-center"
+        :href="`/course-pack/${courseStore.currentCourse?.coursePackId}`"
       >
-        <path
-          fill="currentColor"
-          d="M18 28A12 12 0 1 0 6 16v6.2l-3.6-3.6L1 20l6 6l6-6l-1.4-1.4L8 22.2V16a10 10 0 1 1 10 10Z"
-        />
-      </svg>
+        <UTooltip text="课程列表">
+          <IconsExpand class="h-7 w-7" />
+        </UTooltip>
+      </NuxtLink>
+      <div
+        class="clickable-item ml-4"
+        @click="openCourseContents"
+      >
+        <UTooltip text="课程题目列表">
+          {{ currentCourseInfo }}
+        </UTooltip>
+      </div>
+      <MainStudyVideoLink :video="courseStore.currentCourse?.video" />
     </div>
-    <div
-      @click="rankingStore.showRankModal"
-      class="link-item"
-    >
-      排行榜
+
+    <!-- 右侧 -->
+    <div class="flex items-center gap-4">
+      <div
+        @click="openGameSettingModal"
+        v-if="isDictationMode()"
+      >
+        <UTooltip text="游戏设置">
+          <UIcon
+            name="i-ph-gear"
+            class="clickable-item h-6 w-6"
+          />
+        </UTooltip>
+      </div>
+
+      <div
+        v-if="isAuthenticated()"
+        @click="pauseGame"
+      >
+        <UTooltip
+          text="暂停游戏"
+          :shortcuts="parseShortcut(shortcutKeys.pause)"
+        >
+          <UIcon
+            name="i-ph-pause"
+            class="clickable-item h-6 w-6"
+          />
+        </UTooltip>
+      </div>
+
+      <div @click="handleDoAgain">
+        <UTooltip text="重置当前课程进度">
+          <UIcon
+            name="i-ph-arrow-counter-clockwise"
+            class="clickable-item h-6 w-6"
+          />
+        </UTooltip>
+      </div>
+      <div @click="rankingStore.showRankModal">
+        <UTooltip text="排行榜">
+          <UIcon
+            name="i-ph-ranking"
+            class="clickable-item h-6 w-6"
+          />
+        </UTooltip>
+      </div>
     </div>
-    <div
-      class="absolute left-0 bottom-[-12px] h-[12px] bg-green-500 rounded rounded-tl-none rounded-bl-none transition-all"
-      :style="{ width: currentPercentage + '%' }"
-    ></div>
-    <Contents></Contents>
+
+    <MainCourseContents v-model:isOpen="isOpenCourseContents"></MainCourseContents>
   </div>
-  <RankList></RankList>
-  <MessageBox
-    class="mt-[-4vh]"
-    v-model:isShowModal="showTipModal"
-    content="Do you confirm the reset progress?"
-    @confirm="handleTipConfirm"
-  ></MessageBox>
+
+  <CommonProgressBar
+    class="h-6 p-[2px]"
+    :percentage="currentPercentage"
+  />
+  <RankRankingBoard />
 </template>
 
 <script setup lang="ts">
+import { useModal } from "#imports";
 import { computed, ref } from "vue";
-import MessageBox from "~/components/main/MessageBox/MessageBox.vue";
-import RankList from "~/components/rank/RankingList.vue";
+
+import Dialog from "~/components/common/Dialog.vue";
+import { useQuestionInput } from "~/components/main/QuestionInput/questionInputHelper";
 import { courseTimer } from "~/composables/courses/courseTimer";
 import { useGameMode } from "~/composables/main/game";
 import { clearQuestionInput } from "~/composables/main/question";
+import { useCourseContents } from "~/composables/main/useCourseContents";
+import { useGamePause } from "~/composables/main/useGamePause";
+import { useGameSetting } from "~/composables/main/useGameSetting";
 import { useRanking } from "~/composables/rank/rankingList";
+import { useGamePlayMode } from "~/composables/user/gamePlayMode";
+import { parseShortcut, useShortcutKeyMode } from "~/composables/user/shortcutKey";
+import { isAuthenticated } from "~/services/auth";
 import { useCourseStore } from "~/store/course";
-import { useQuestionInput } from "~/components/main/QuestionInput/questionInput";
-import Contents from "./Contents/Contents.vue";
-import { useContent } from "./Contents/useContents";
-import StudyVideoLink from "./StudyVideoLink.vue";
 
+const { shortcutKeys } = useShortcutKeyMode();
+const { isDictationMode } = useGamePlayMode();
 const rankingStore = useRanking();
 const courseStore = useCourseStore();
 const { focusInput } = useQuestionInput();
+const { openCourseContents } = useCourseContents();
+const { handleDoAgain } = useDoAgain();
+const { pauseGame } = useGamePause();
+const { openGameSettingModal } = useGameSetting();
+const modal = useModal();
+
+const currentCourseInfo = computed(() => {
+  return `${courseStore.currentCourse?.title}（${currentSchedule.value}/${courseStore.visibleStatementsCount}）`;
+});
 
 const currentSchedule = computed(() => {
-  return courseStore.statementIndex + 1;
+  return courseStore.visibleStatementIndex + 1;
 });
 
 const currentPercentage = computed(() => {
   if (courseStore.isAllDone()) {
     return 100;
   }
-  return (
-    (courseStore.statementIndex / courseStore.totalQuestionsCount) *
-    100
-  ).toFixed(2);
+  return ((courseStore.visibleStatementIndex / courseStore.visibleStatementsCount) * 100).toFixed(
+    2,
+  );
 });
 
-const coursesStore = useCourseStore();
-const { showTipModal, handleDoAgain, handleTipConfirm } = useDoAgain();
+const isOpenCourseContents = ref(false);
 
 function useDoAgain() {
-  const showTipModal = ref<boolean>(false);
   const { showQuestion } = useGameMode();
 
   function handleDoAgain() {
-    showTipModal.value = true;
+    modal.open(Dialog, {
+      title: "重置进度",
+      content: "是否确认重置当前课程进度？",
+      showCancel: true,
+      showConfirm: true,
+      async onCancel() {
+        setTimeout(() => {
+          focusInput();
+        }, 300);
+      },
+      async onConfirm() {
+        handleTipConfirm();
+      },
+    });
   }
 
   function handleTipConfirm() {
-    coursesStore.doAgain();
+    courseStore.doAgain();
     clearQuestionInput();
-    focusInput();
     showQuestion();
-    courseTimer.reset()
+    courseTimer.reset();
+    // dialog 关闭后 自动聚焦 因为关闭有个 200 毫秒的动画 所以需要延迟聚焦 input
+    setTimeout(() => {
+      focusInput();
+    }, 300);
   }
 
   return {
-    showTipModal,
     handleDoAgain,
     handleTipConfirm,
   };
 }
-
-const { toggleContents } = useContent();
 </script>
 
 <style scoped>
-.icon-item {
-  @apply w-6 h-6;
-}
-
-.link-item {
-  @apply cursor-pointer hover:text-fuchsia-500 select-none;
+.clickable-item {
+  @apply cursor-pointer select-none hover:text-fuchsia-500;
 }
 </style>

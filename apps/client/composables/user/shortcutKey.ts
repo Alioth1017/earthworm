@@ -5,6 +5,8 @@ export enum SHORTCUT_KEY_TYPES {
   ANSWER = "answer",
   SKIP = "skip",
   PREVIOUS = "previous",
+  MASTERED = "mastered",
+  PAUSE = "pause",
 }
 export const SHORTCUT_KEYS = "shortcutKeys";
 export const DEFAULT_SHORTCUT_KEYS = {
@@ -12,6 +14,8 @@ export const DEFAULT_SHORTCUT_KEYS = {
   answer: "Ctrl+;",
   skip: "Ctrl+.",
   previous: "Ctrl+,",
+  mastered: "Ctrl+m",
+  pause: "Ctrl+p",
 };
 
 export const KEYBOARD = {
@@ -46,31 +50,37 @@ export function convertMacKey(key: string) {
   );
 }
 
+export function parseShortcut(shortcut: string): string[] {
+  return shortcut
+    .split("+")
+    .map((key) => key.trim().charAt(0).toUpperCase() + key.slice(1).toLowerCase());
+}
+
 // 自定义快捷键
-export function useShortcutKeyMode() {
-  const showModal = ref<boolean>(false);
-  const currentKeyType = ref<SHORTCUT_KEY_TYPES | "">("");
-  const shortcutKeyStr = ref<string>("");
-  const shortcutKeys = ref<{ [key: string]: any }>({
-    ...DEFAULT_SHORTCUT_KEYS,
-  });
-  const shortcutKeyTip = computed(() => {
-    return shortcutKeyStr.value.replace(/\+/g, "+");
-  });
-  const hasSameShortcutKey = ref(false);
+const showModal = ref<boolean>(false);
+const currentKeyType = ref<SHORTCUT_KEY_TYPES | "">("");
+const shortcutKeyStr = ref<string>("");
+const shortcutKeys = ref<{ [key: string]: any }>({
+  ...DEFAULT_SHORTCUT_KEYS,
+});
+const hasSameShortcutKey = ref(false);
+const shortcutKeyTip = computed(() => {
+  return shortcutKeyStr.value.replace(/\+/g, "+");
+});
 
-  // 初始化快捷键
-  setShortcutKeys();
+// 初始化快捷键
+setShortcutKeys();
 
-  function setShortcutKeys() {
-    const localKeys = localStorage.getItem(SHORTCUT_KEYS);
-    if (localKeys) {
-      shortcutKeys.value = { ...shortcutKeys.value, ...JSON.parse(localKeys) };
-    } else {
-      localStorage.setItem(SHORTCUT_KEYS, JSON.stringify(shortcutKeys.value));
-    }
+function setShortcutKeys() {
+  const localKeys = localStorage.getItem(SHORTCUT_KEYS);
+  if (localKeys) {
+    shortcutKeys.value = { ...shortcutKeys.value, ...JSON.parse(localKeys) };
+  } else {
+    localStorage.setItem(SHORTCUT_KEYS, JSON.stringify(shortcutKeys.value));
   }
+}
 
+export function useShortcutKeyMode() {
   function handleEdit(type: SHORTCUT_KEY_TYPES) {
     showModal.value = true;
     shortcutKeyStr.value = "";
@@ -117,6 +127,12 @@ export function useShortcutKeyMode() {
     if (!showModal.value) return;
 
     e.preventDefault();
+
+    if (e.key === "Escape") {
+      handleCloseDialog();
+      return;
+    }
+
     const mainKey = getKeyModifier(e);
     if (!mainKey && isEnterKey(e.key)) {
       if (checkSameShortcutKey(shortcutKeyStr.value)) {
@@ -138,6 +154,15 @@ export function useShortcutKeyMode() {
     }
   }
 
+  function reset() {
+    showModal.value = false;
+    currentKeyType.value = "";
+    shortcutKeyStr.value = "";
+    shortcutKeys.value = { ...DEFAULT_SHORTCUT_KEYS };
+    hasSameShortcutKey.value = false;
+    localStorage.removeItem(SHORTCUT_KEYS);
+  }
+
   return {
     showModal, // 弹框对象
     shortcutKeys, // 快捷键对象
@@ -148,5 +173,6 @@ export function useShortcutKeyMode() {
     handleKeydown,
     handleEdit,
     handleCloseDialog,
+    reset,
   };
 }

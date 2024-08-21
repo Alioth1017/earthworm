@@ -1,17 +1,18 @@
 import { describe, expect, it, vi } from "vitest";
-import { useInput } from "../question";
+
+import { isWord, useInput } from "../question";
 
 describe("question", () => {
   it("should parse user input correctly", () => {
     const setInputCursorPosition = () => {};
     const getInputCursorPosition = () => 0;
 
-    const { userInputWords, setInputValue } = useInput({
+    const { userInputWords, setInputValue, initialize } = useInput({
       source: () => "i eat",
       setInputCursorPosition,
       getInputCursorPosition,
     });
-
+    initialize();
     setInputValue("i eat");
 
     expect(userInputWords).toMatchInlineSnapshot(`
@@ -40,17 +41,67 @@ describe("question", () => {
     `);
   });
 
+  it("should filter all symbol", () => {
+    const setInputCursorPosition = () => {};
+    const getInputCursorPosition = () => 0;
+    const { userInputWords, initialize } = useInput({
+      source: () => `i " like " the food ?`,
+      setInputCursorPosition,
+      getInputCursorPosition,
+    });
+
+    initialize();
+    expect(userInputWords.length).toBe(4);
+  });
+
+  it("should find word by id", () => {
+    const setInputCursorPosition = () => {};
+    const getInputCursorPosition = () => 0;
+    const { findWordById, initialize } = useInput({
+      source: () => `i " like " the food ?`,
+      setInputCursorPosition,
+      getInputCursorPosition,
+    });
+    initialize();
+
+    expect(findWordById(0)?.text).toBe("i");
+    expect(findWordById(2)?.text).toBe("like");
+    expect(findWordById(4)?.text).toBe("the");
+    expect(findWordById(5)?.text).toBe("food");
+  });
+
   it("should be correct when checked the answer", async () => {
     const setInputCursorPosition = () => {};
     const getInputCursorPosition = () => 0;
 
-    const { setInputValue, submitAnswer } = useInput({
+    const { setInputValue, submitAnswer, initialize } = useInput({
+      source: () => "i eat",
+      setInputCursorPosition,
+      getInputCursorPosition,
+    });
+    initialize();
+    setInputValue("i eat");
+
+    const correctCallback = vi.fn();
+    const wrongCallback = vi.fn();
+    submitAnswer(correctCallback, wrongCallback);
+
+    expect(correctCallback).toBeCalled();
+    expect(wrongCallback).not.toBeCalled();
+  });
+
+  it("A full stop at the end of a sentence will be ignored without affecting the result", async () => {
+    const setInputCursorPosition = () => {};
+    const getInputCursorPosition = () => 0;
+
+    const { setInputValue, submitAnswer, initialize } = useInput({
       source: () => "i eat",
       setInputCursorPosition,
       getInputCursorPosition,
     });
 
-    setInputValue("i eat");
+    initialize();
+    setInputValue("i eat.");
 
     const correctCallback = vi.fn();
     const wrongCallback = vi.fn();
@@ -64,12 +115,13 @@ describe("question", () => {
     const setInputCursorPosition = () => {};
     const getInputCursorPosition = () => 0;
 
-    const { userInputWords, setInputValue, submitAnswer } = useInput({
+    const { userInputWords, setInputValue, submitAnswer, initialize } = useInput({
       source: () => "i eat",
       setInputCursorPosition,
       getInputCursorPosition,
     });
 
+    initialize();
     setInputValue("i like");
 
     const correctCallback = vi.fn();
@@ -81,35 +133,41 @@ describe("question", () => {
     expect(userInputWords[1].incorrect).toBe(true);
   });
 
-  it("should be correct when compared 'don't' and 'don‘t'", async () => {
-    const setInputCursorPosition = () => {};
-    const getInputCursorPosition = () => 0;
+  it.each(["i don‘t", "i don’t", "i don“t", `i don"t`, `i don”t`])(
+    "should be correct when input '%s'",
+    async (input) => {
+      const setInputCursorPosition = () => {};
+      const getInputCursorPosition = () => 0;
 
-    const { setInputValue, submitAnswer } = useInput({
-      source: () => "i don't",
-      setInputCursorPosition,
-      getInputCursorPosition,
-    });
+      const { setInputValue, submitAnswer, initialize } = useInput({
+        source: () => "i don't",
+        setInputCursorPosition,
+        getInputCursorPosition,
+      });
 
-    setInputValue("i don‘t");
+      initialize();
+      setInputValue(input);
 
-    const correctCallback = vi.fn();
-    const wrongCallback = vi.fn();
-    submitAnswer(correctCallback, wrongCallback);
+      const correctCallback = vi.fn();
+      const wrongCallback = vi.fn();
+      submitAnswer(correctCallback, wrongCallback);
 
-    expect(correctCallback).toBeCalled();
-    expect(wrongCallback).not.toBeCalled();
-  });
+      expect(correctCallback).toBeCalled();
+      expect(wrongCallback).not.toBeCalled();
+    },
+  );
 
   it("should be the first word should be active", () => {
     const setInputCursorPosition = () => {};
     const getInputCursorPosition = () => 0;
 
-    const { userInputWords } = useInput({
+    const { userInputWords, initialize } = useInput({
       source: () => "i eat",
       setInputCursorPosition,
       getInputCursorPosition,
     });
+
+    initialize();
 
     expect(userInputWords[0].isActive).toBe(true);
   });
@@ -118,11 +176,12 @@ describe("question", () => {
     const setInputCursorPosition = () => {};
     const getInputCursorPosition = () => 0;
 
-    const { userInputWords } = useInput({
+    const { userInputWords, initialize } = useInput({
       source: () => "i eat",
       setInputCursorPosition,
       getInputCursorPosition,
     });
+    initialize();
 
     expect(userInputWords[0].isActive).toBe(true);
   });
@@ -131,11 +190,12 @@ describe("question", () => {
     const setInputCursorPosition = () => {};
     const getInputCursorPosition = vi.fn();
 
-    const { userInputWords, setInputValue } = useInput({
+    const { userInputWords, setInputValue, initialize } = useInput({
       source: () => "i eat",
       setInputCursorPosition,
       getInputCursorPosition,
     });
+    initialize();
 
     getInputCursorPosition.mockReturnValue(1);
     setInputValue("i");
@@ -158,22 +218,42 @@ describe("question", () => {
     const setInputCursorPosition = () => {};
     const getInputCursorPosition = () => 0;
 
-    const {
-      setInputValue,
-      userInputWords,
-      submitAnswer,
-      fixFirstIncorrectWord,
-    } = useInput({
+    const { setInputValue, userInputWords, submitAnswer, fixIncorrectWord, initialize } = useInput({
       source: () => "i eat",
       setInputCursorPosition,
       getInputCursorPosition,
     });
 
+    initialize();
     setInputValue("he eat");
     submitAnswer();
-    await fixFirstIncorrectWord();
+    await fixIncorrectWord();
 
     expect(userInputWords[0].userInput).toBe("");
+    expect(userInputWords[0].isActive).toBe(true);
+  });
+
+  it("should be cleared the first incorrect word when press submit again", async () => {
+    const setInputCursorPosition = () => {};
+    const getInputCursorPosition = () => 0;
+
+    const { setInputValue, userInputWords, submitAnswer, fixIncorrectWord, initialize } = useInput({
+      source: () => "i eat",
+      setInputCursorPosition,
+      getInputCursorPosition,
+    });
+
+    initialize();
+    setInputValue("he eat");
+    submitAnswer();
+    await fixIncorrectWord();
+
+    // to next world by input Space
+    setInputValue(" ");
+    // again submit
+    submitAnswer();
+    await fixIncorrectWord();
+
     expect(userInputWords[0].isActive).toBe(true);
   });
 
@@ -181,13 +261,13 @@ describe("question", () => {
     const setInputCursorPosition = () => {};
     const getInputCursorPosition = () => 0;
 
-    const { setInputValue, userInputWords, submitAnswer, fixIncorrectWord } =
-      useInput({
-        source: () => "i eat apple",
-        setInputCursorPosition,
-        getInputCursorPosition,
-      });
+    const { setInputValue, userInputWords, submitAnswer, fixIncorrectWord, initialize } = useInput({
+      source: () => "i eat apple",
+      setInputCursorPosition,
+      getInputCursorPosition,
+    });
 
+    initialize();
     setInputValue("he eats a");
     submitAnswer();
 
@@ -207,39 +287,17 @@ describe("question", () => {
     expect(userInputWords[2].isActive).toBe(true);
   });
 
-  it("should prevent any input when fix mode", () => {
-    const setInputCursorPosition = () => {};
-    const getInputCursorPosition = () => 0;
-
-    const { setInputValue, submitAnswer, handleKeyboardInput } = useInput({
-      source: () => "i eat apple",
-      setInputCursorPosition,
-      getInputCursorPosition,
-    });
-
-    setInputValue("i ea ap");
-
-    submitAnswer();
-
-    const preventDefault = vi.fn();
-    handleKeyboardInput({
-      code: "i",
-      preventDefault,
-    } as any as KeyboardEvent);
-
-    expect(preventDefault).toBeCalled();
-  });
-
   it("should prevent move", () => {
     const setInputCursorPosition = () => {};
     const getInputCursorPosition = () => 0;
 
-    const { setInputValue, handleKeyboardInput } = useInput({
+    const { setInputValue, handleKeyboardInput, initialize } = useInput({
       source: () => "i eat apple",
       setInputCursorPosition,
       getInputCursorPosition,
     });
 
+    initialize();
     setInputValue("i ea ap");
 
     // move to left
@@ -263,17 +321,14 @@ describe("question", () => {
     const setInputCursorPosition = () => {};
     const getInputCursorPosition = () => 0;
 
-    const {
-      setInputValue,
-      submitAnswer,
-      fixIncorrectWord,
-      handleKeyboardInput,
-    } = useInput({
-      source: () => "i eat apple",
-      setInputCursorPosition,
-      getInputCursorPosition,
-    });
+    const { setInputValue, submitAnswer, fixIncorrectWord, handleKeyboardInput, initialize } =
+      useInput({
+        source: () => "i eat apple",
+        setInputCursorPosition,
+        getInputCursorPosition,
+      });
 
+    initialize();
     setInputValue("i ea ap");
     submitAnswer();
     await fixIncorrectWord();
@@ -291,17 +346,14 @@ describe("question", () => {
     const setInputCursorPosition = () => {};
     const getInputCursorPosition = () => 0;
 
-    const {
-      setInputValue,
-      submitAnswer,
-      fixIncorrectWord,
-      handleKeyboardInput,
-    } = useInput({
-      source: () => "i eat apple",
-      setInputCursorPosition,
-      getInputCursorPosition,
-    });
+    const { setInputValue, submitAnswer, fixIncorrectWord, handleKeyboardInput, initialize } =
+      useInput({
+        source: () => "i eat apple",
+        setInputCursorPosition,
+        getInputCursorPosition,
+      });
 
+    initialize();
     setInputValue("i ea apple");
     submitAnswer();
     await fixIncorrectWord();
@@ -319,12 +371,13 @@ describe("question", () => {
     const setInputCursorPosition = () => {};
     const getInputCursorPosition = vi.fn();
 
-    const { setInputValue, handleKeyboardInput } = useInput({
+    const { setInputValue, handleKeyboardInput, initialize } = useInput({
       source: () => "i eat apple",
       setInputCursorPosition,
       getInputCursorPosition,
     });
 
+    initialize();
     const inputValue = "i eat apple";
     getInputCursorPosition.mockReturnValue(inputValue.length);
     setInputValue(inputValue);
@@ -351,12 +404,14 @@ describe("question", () => {
       submitAnswer,
       activePreviousIncorrectWord,
       fixIncorrectWord,
+      initialize,
     } = useInput({
       source: () => "i eat apple",
       setInputCursorPosition,
       getInputCursorPosition,
     });
 
+    initialize();
     setInputValue("he eat banana");
     submitAnswer();
 
@@ -374,12 +429,13 @@ describe("question", () => {
     const setInputCursorPosition = () => {};
     const getInputCursorPosition = vi.fn();
 
-    const { setInputValue, handleKeyboardInput } = useInput({
+    const { setInputValue, handleKeyboardInput, initialize } = useInput({
       source: () => "i eat apple",
       setInputCursorPosition,
       getInputCursorPosition,
     });
 
+    initialize();
     const inputValue = "i eat apple";
     getInputCursorPosition.mockReturnValue(inputValue.length);
     setInputValue(inputValue);
@@ -397,7 +453,7 @@ describe("question", () => {
           enable: true,
           rightCallback: submitAnswerCallback,
         },
-      }
+      },
     );
 
     expect(submitAnswerCallback).toBeCalled();
@@ -413,12 +469,14 @@ describe("question", () => {
       submitAnswer,
       fixIncorrectWord,
       handleKeyboardInput,
+      initialize,
     } = useInput({
       source: () => "i eat apple",
       setInputCursorPosition,
       getInputCursorPosition,
     });
 
+    initialize();
     const inputValue = "i e apple";
     getInputCursorPosition.mockReturnValue(inputValue.length);
     setInputValue(inputValue);
@@ -444,7 +502,7 @@ describe("question", () => {
           enable: true,
           rightCallback: submitAnswerCallback,
         },
-      }
+      },
     );
 
     expect(submitAnswerCallback).toBeCalled();
@@ -456,13 +514,14 @@ describe("question", () => {
       const getInputCursorPosition = vi.fn();
       const inputChangedCallback = vi.fn();
 
-      const { setInputValue, handleKeyboardInput } = useInput({
+      const { setInputValue, handleKeyboardInput, initialize } = useInput({
         source: () => "i eat apple",
         setInputCursorPosition,
         getInputCursorPosition,
         inputChangedCallback,
       });
 
+      initialize();
       const inputValue = "i eat ap";
       getInputCursorPosition.mockReturnValue(inputValue.length);
       setInputValue(inputValue);
@@ -479,13 +538,14 @@ describe("question", () => {
       const getInputCursorPosition = vi.fn();
       const inputChangedCallback = vi.fn();
 
-      const { setInputValue, handleKeyboardInput, submitAnswer } = useInput({
+      const { setInputValue, handleKeyboardInput, submitAnswer, initialize } = useInput({
         source: () => "i eat apple",
         setInputCursorPosition,
         getInputCursorPosition,
         inputChangedCallback,
       });
 
+      initialize();
       const inputValue = "i eat ap";
       getInputCursorPosition.mockReturnValue(inputValue.length);
       setInputValue(inputValue);
@@ -497,22 +557,74 @@ describe("question", () => {
         preventDefault: () => {},
       } as any as KeyboardEvent);
 
-      expect(inputChangedCallback).toBeCalledWith(
-        expect.objectContaining({ code: "Backspace" })
-      );
+      expect(inputChangedCallback).toBeCalledWith(expect.objectContaining({ code: "Backspace" }));
     });
+
+    it.each([
+      { userInput: "j", isPrevent: false },
+      {
+        userInput: "f",
+        isPrevent: false,
+      },
+
+      {
+        userInput: "Backspace",
+        isPrevent: true,
+      },
+
+      {
+        userInput: "Space",
+        isPrevent: true,
+      },
+    ])(
+      "should fix incorrect world when press $userInput on fix mode ",
+      ({ userInput, isPrevent }) => {
+        const setInputCursorPosition = () => {};
+        const getInputCursorPosition = vi.fn();
+        const inputChangedCallback = vi.fn();
+
+        const { setInputValue, handleKeyboardInput, submitAnswer, userInputWords, initialize } =
+          useInput({
+            source: () => "like code",
+            setInputCursorPosition,
+            getInputCursorPosition,
+            inputChangedCallback,
+          });
+
+        initialize();
+        const inputValue = "lik co";
+        getInputCursorPosition.mockReturnValue(inputValue.length);
+        setInputValue(inputValue);
+
+        submitAnswer();
+
+        const preventDefault = vi.fn();
+        handleKeyboardInput({
+          code: userInput,
+          preventDefault,
+        } as any as KeyboardEvent);
+        getInputCursorPosition.mockReturnValue(0);
+        setInputValue(userInput);
+
+        expect(userInputWords[0].isActive).toBe(true);
+        expect(userInputWords[0].userInput).toBe(userInput);
+        // preventDefault 意味着是否直接上屏
+        isPrevent ? expect(preventDefault).toBeCalled() : expect(preventDefault).not.toBeCalled();
+      },
+    );
 
     it("should trigger when press Backspace on fix input mode ", () => {
       const setInputCursorPosition = () => {};
       const getInputCursorPosition = vi.fn();
       const inputChangedCallback = vi.fn();
 
-      const { setInputValue, handleKeyboardInput, submitAnswer } = useInput({
+      const { setInputValue, handleKeyboardInput, submitAnswer, initialize } = useInput({
         source: () => "i eat apple",
         setInputCursorPosition,
         getInputCursorPosition,
         inputChangedCallback,
       });
+      initialize();
 
       const inputValue = "i eat a";
       getInputCursorPosition.mockReturnValue(inputValue.length);
@@ -532,5 +644,33 @@ describe("question", () => {
 
       expect(inputChangedCallback).toBeCalledTimes(2);
     });
+  });
+});
+
+describe("isWord", () => {
+  it("should return true for a string containing an English letter", () => {
+    expect(isWord("hello")).toBe(true);
+    expect(isWord("Hello")).toBe(true);
+    expect(isWord("123word")).toBe(true);
+    expect(isWord("18")).toBe(true);
+  });
+
+  it("should return false for a string without any English letters", () => {
+    expect(isWord("—")).toBe(false);
+    expect(isWord("！@#$%^&*()")).toBe(false);
+    expect(isWord("こんにちは")).toBe(false); // Japanese characters
+  });
+
+  it("should return false for an empty string", () => {
+    expect(isWord("")).toBe(false);
+  });
+
+  it("should correctly identify single English letter", () => {
+    expect(isWord("a")).toBe(true);
+    expect(isWord("A")).toBe(true);
+  });
+
+  it("should return false for strings with only non-alphabetic characters", () => {
+    expect(isWord(". ,;:!")).toBe(false);
   });
 });

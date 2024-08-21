@@ -1,91 +1,124 @@
 <template>
-  <div class="relative flex items-center justify-center my-8">
-    <div class="z-10 flex items-center justify-center">
-      <div>
-        <button
-          class="btn btn-ghost"
-          @click="playSound"
-        >
-          <div class="flex items-center justify-center gap-2 text-center">
-            <div
-              v-for="key in parseShortcutKeys(shortcutKeys.sound)"
-              class="kbd"
-            >
-              {{ key }}
-            </div>
-          </div>
-          <span>播放发音</span>
-        </button>
-      </div>
-      <div>
-        <button
-          class="btn btn-ghost"
-          @click="toggleGameMode"
-        >
-          <div class="flex items-center justify-center gap-2 text-center">
-            <div
-              v-for="key in parseShortcutKeys(shortcutKeys.answer)"
-              class="kbd"
-            >
-              {{ key }}
-            </div>
-          </div>
-          <span>{{ toggleTipText }}</span>
-        </button>
-      </div>
-      <div>
-        <button class="btn btn-ghost">
-          <span class="kbd">Space</span>
-          <span>{{ spaceTipText }} </span>
-        </button>
-      </div>
+  <div class="relative flex h-32 items-center justify-center">
+    <div class="z-10 hidden items-center justify-center min-[780px]:flex">
+      <button
+        v-for="keybinding in keybindings"
+        @click="keybinding.eventFn"
+        class="btn btn-ghost"
+      >
+        <div class="flex items-center gap-0.5">
+          <UKbd v-for="keyStr in parseShortcutKeys(keybinding.keys)">
+            {{ keyStr }}
+          </UKbd>
+        </div>
+        <span>{{ keybinding.text }}</span>
+      </button>
     </div>
-    <PrevAndNextBtn />
+
+    <MainPrevAndNextBtn />
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed, onMounted, onUnmounted } from "vue";
+
 import { useAnswerTip } from "~/composables/main/answerTip";
 import { useCurrentStatementEnglishSound } from "~/composables/main/englishSound";
 import { useGameMode } from "~/composables/main/game";
 import { useSummary } from "~/composables/main/summary";
+import { useMastered } from "~/composables/main/useMastered";
 import { useShortcutKeyMode } from "~/composables/user/shortcutKey";
-import {
-  cancelShortcut,
-  parseShortcutKeys,
-  registerShortcut,
-} from "~/utils/keyboardShortcuts";
-import PrevAndNextBtn from "./PrevAndNextBtn.vue";
+import { cancelShortcut, parseShortcutKeys, registerShortcut } from "~/utils/keyboardShortcuts";
+import { useAnswer } from "./QuestionInput/useAnswer";
+import { useWrapperQuestionInput } from "./QuestionInput/useWrapperQuestionInput";
 
+const { toggleAnswerTip, isAnswerTip } = useAnswerTip();
 const { shortcutKeys } = useShortcutKeyMode();
 const { playSound } = usePlaySound(shortcutKeys.value.sound);
-const { toggleGameMode } = useShowAnswer(shortcutKeys.value.answer);
+const { goToNextQuestion } = useAnswer();
+const { showQuestion, isQuestion } = useGameMode();
+const { submitAnswer } = useWrapperQuestionInput();
+const { handleMastered } = useMasteredShortcut();
+useShowAnswer(shortcutKeys.value.answer);
 
-const toggleTipText = computed(() => {
-  let text = "";
-  const { isAnswer } = useGameMode();
-  const { isAnswerTip } = useAnswerTip();
-  if (isAnswer()) {
-    text = "再来一次";
+const keybindings = computed(() => {
+  const questionItems = [
+    {
+      keys: "Enter",
+      text: "提交",
+      eventFn: () => {
+        submitAnswer();
+      },
+    },
+    {
+      keys: shortcutKeys.value.answer,
+      text: isAnswerTip() ? "隐藏答案" : "显示答案",
+      eventFn: () => {
+        toggleAnswerTip();
+      },
+    },
+  ];
+
+  const answerItems = [
+    {
+      keys: "Enter",
+      text: "下一题",
+      eventFn: () => {
+        goToNextQuestion();
+      },
+    },
+    {
+      keys: shortcutKeys.value.answer,
+      text: "再来一次",
+      eventFn: () => {
+        showQuestion();
+      },
+    },
+  ];
+
+  const normalItems = [
+    {
+      keys: shortcutKeys.value.sound,
+      text: "播放发音",
+      eventFn: playSound,
+    },
+    {
+      keys: shortcutKeys.value.mastered,
+      text: "掌握",
+      eventFn: handleMastered,
+    },
+  ];
+
+  const resultItems: any = [...normalItems];
+
+  if (isQuestion()) {
+    resultItems.push(...questionItems);
   } else {
-    if (isAnswerTip()) {
-      text = "隐藏答案";
-    } else {
-      text = "显示答案";
-    }
+    resultItems.push(...answerItems);
   }
-  return text;
+
+  return resultItems;
 });
 
-const spaceTipText = computed(() => {
-  const { isAnswer } = useGameMode();
-  if (isAnswer()) {
-    return "下一题";
-  } else {
-    return "修复错误单词";
+function useMasteredShortcut() {
+  const { markStatementAsMastered } = useMastered();
+
+  function handleMastered() {
+    markStatementAsMastered();
   }
-});
+
+  onMounted(() => {
+    registerShortcut(shortcutKeys.value.mastered, handleMastered);
+  });
+
+  onUnmounted(() => {
+    cancelShortcut(shortcutKeys.value.mastered, handleMastered);
+  });
+
+  return {
+    handleMastered,
+  };
+}
 
 function usePlaySound(key: string) {
   const { playSound } = useCurrentStatementEnglishSound();
@@ -109,9 +142,6 @@ function usePlaySound(key: string) {
 }
 
 function useShowAnswer(key: string) {
-  const { showQuestion } = useGameMode();
-  const { showAnswerTip, hiddenAnswerTip } = useAnswerTip();
-
   onMounted(() => {
     registerShortcut(key, handleShowAnswer);
   });
@@ -122,32 +152,16 @@ function useShowAnswer(key: string) {
 
   function handleShowAnswer(e: KeyboardEvent) {
     e.preventDefault();
-    toggleGameMode();
-  }
-
-  function toggleGameMode() {
     // NOTE: registerShortcut 事件会记住注册时的面板状态，所以这里要重新获取下面板信息
     const { showModal } = useSummary();
-    if (showModal.value) {
-      // 结算面板不做切换处理
-      return;
-    }
+    if (showModal.value) return;
 
     const { isAnswer } = useGameMode();
-    const { isAnswerTip } = useAnswerTip();
     if (isAnswer()) {
       showQuestion();
     } else {
-      if (isAnswerTip()) {
-        hiddenAnswerTip();
-      } else {
-        showAnswerTip();
-      }
+      toggleAnswerTip();
     }
   }
-
-  return {
-    toggleGameMode,
-  };
 }
 </script>

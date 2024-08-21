@@ -1,20 +1,17 @@
 import { defineStore } from "pinia";
 import { ref, watch } from "vue";
-import {
-  fetchProgressRank,
-  type ProgressRankVo,
-  type RankingItemType,
-  type RankingSelfType,
-} from "~/api/rank";
-import Message from "~/components/main/Message/useMessage";
+import { toast } from "vue-sonner";
 
-let rankingCache: Record<string, ProgressRankVo> = {};
+import type { ProgressRank, RankingItem, RankingSelf } from "~/types";
+import { fetchProgressRank } from "~/api/rank";
+
+let rankingCache: Record<string, ProgressRank> = {};
 export function cacheRanking() {
   function cleanRankingCache() {
     rankingCache = {};
   }
 
-  function saveRankingCache(key: string, value: ProgressRankVo) {
+  function saveRankingCache(key: string, value: ProgressRank) {
     rankingCache[key] = value;
   }
 
@@ -36,18 +33,13 @@ export function cacheRanking() {
 }
 
 export const useRanking = defineStore("ranking", () => {
-  const {
-    saveRankingCache,
-    getRankingCache,
-    hasRankingCache,
-    cleanRankingCache,
-  } = cacheRanking();
+  const { saveRankingCache, getRankingCache, hasRankingCache, cleanRankingCache } = cacheRanking();
 
   const rankModal = ref(false); // 需要作用于不同页面
   const isLoading = ref(false);
   const currentPeriod = ref<string>("weekly");
-  const rankingList = ref<RankingItemType[]>([]);
-  const rankingSelf = ref<RankingSelfType | null>(null);
+  const rankingList = ref<RankingItem[]>([]);
+  const rankingSelf = ref<RankingSelf | null>(null);
   const rankingPeriodList = [
     {
       label: "周排行",
@@ -74,7 +66,7 @@ export const useRanking = defineStore("ranking", () => {
     saveRankingCache(currentPeriod.value, res);
   });
 
-  function updateRankingList(res: ProgressRankVo) {
+  function updateRankingList(res: ProgressRank) {
     rankingList.value = res.list;
     rankingSelf.value = res.self;
   }
@@ -94,7 +86,7 @@ export const useRanking = defineStore("ranking", () => {
 
     // 加载中不允许切换
     if (isLoading.value) {
-      Message.warning("请等待当前排行榜加载完成", { duration: 1200 });
+      toast.warning("请等待当前排行榜加载完成", { duration: 1200 });
       return;
     }
 

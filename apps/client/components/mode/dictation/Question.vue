@@ -1,28 +1,29 @@
 <template>
   <div>
-    <QuestionInput></QuestionInput>
+    <MainQuestionInput />
   </div>
 </template>
 
 <script setup lang="ts">
 import { onMounted, onUnmounted, watch } from "vue";
-import QuestionInput from "~/components/main/QuestionInput/QuestionInput.vue";
+
+import { useCurrentStatementEnglishSound } from "~/composables/main/englishSound";
 import { useCourseStore } from "~/store/course";
-import { play } from "./dictation";
 
 usePlayEnglishSound();
+const { playSound } = useCurrentStatementEnglishSound();
 
 function usePlayEnglishSound() {
   onMounted(() => {
-    const pauseSound = play();
+    const pauseSound = playSound();
     const courseStore = useCourseStore();
 
     watch(
       () => courseStore.statementIndex,
       () => {
         pauseSound();
-        play();
-      }
+        playSound();
+      },
     );
 
     onUnmounted(() => {
@@ -31,5 +32,3 @@ function usePlayEnglishSound() {
   });
 }
 </script>
-
-<style lang="scss" scoped></style>

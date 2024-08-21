@@ -1,3 +1,5 @@
+import { usePronunciation } from "~/composables/user/pronunciation";
+
 // 便于测试
 // 后面不使用 audio 后也可以不破坏业务逻辑
 const audio = new Audio();
@@ -6,12 +8,40 @@ export function updateSource(src: string) {
   audio.load();
 }
 
+const { getPronunciationUrl } = usePronunciation();
+export function usePlayWordSound() {
+  const wordAudio = new Audio();
+  let lastWord = "";
+  let isPlaying = false;
+
+  wordAudio.onplay = () => {
+    isPlaying = true;
+  };
+
+  wordAudio.onended = () => {
+    isPlaying = false;
+  };
+
+  function handlePlayWordSound(word: string) {
+    if (isPlaying && lastWord === word) {
+      // skip
+      return;
+    }
+    lastWord = word;
+    wordAudio.src = getPronunciationUrl(word);
+    wordAudio.play();
+  }
+
+  return {
+    handlePlayWordSound,
+  };
+}
+
 export interface PlayOptions {
   times?: number;
   rate?: number;
   interval?: number;
 }
-
 
 const DefaultPlayOptions = {
   times: 1,
@@ -20,11 +50,7 @@ const DefaultPlayOptions = {
 };
 
 export function play(playOptions?: PlayOptions) {
-  const { times, rate, interval } = Object.assign(
-    {},
-    DefaultPlayOptions,
-    playOptions
-  );
+  const { times, rate, interval } = Object.assign({}, DefaultPlayOptions, playOptions);
 
   audio.playbackRate = rate;
   audio.play();
@@ -47,8 +73,8 @@ export function play(playOptions?: PlayOptions) {
   }
 
   return () => {
-    audio.pause()
-    audio.currentTime = 0
+    audio.pause();
+    audio.currentTime = 0;
     audio.removeEventListener("ended", handleEnded);
     timeoutId && clearTimeout(timeoutId);
   };

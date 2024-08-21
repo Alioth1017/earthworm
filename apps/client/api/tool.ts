@@ -1,10 +1,14 @@
-import { http } from "./http";
+import type { DailySentence } from "~/types";
+import { getHttp } from "./http";
 
-interface DailySentenceVo {
-  zh: string
-  en: string
+export interface DailySentenceApiResponse {
+  zh: string;
+  en: string;
 }
 
 export async function fetchDailySentence() {
-  return await http.get<DailySentenceVo, DailySentenceVo>("/tool/dailySentence");  
+  const http = getHttp();
+  return (await http<DailySentenceApiResponse>("/tool/dailySentence", {
+    method: "get",
+  })) as DailySentence;
 }

@@ -1,60 +1,58 @@
-import { courseHistory } from '@earthworm/schema';
-import { Inject, Injectable } from '@nestjs/common';
-import { and, eq } from 'drizzle-orm';
-import { UserEntity } from 'src/user/user.decorators';
-import { DB, DbType } from '../global/providers/db.provider';
+/**
+ * 记录用户当前课程包的课程学习了多少次
+ */
+import { Inject, Injectable } from "@nestjs/common";
+import { and, eq, sql } from "drizzle-orm";
+
+import { courseHistory } from "@earthworm/schema";
+import { DB, DbType } from "../global/providers/db.provider";
 
 @Injectable()
 export class CourseHistoryService {
   constructor(@Inject(DB) private db: DbType) {}
 
-  async findOne(userId: number, courseId: number) {
-    return await this.db
-      .select()
-      .from(courseHistory)
-      .where(
-        and(
-          eq(courseHistory.userId, userId),
-          eq(courseHistory.courseId, courseId),
-        ),
-      );
-  }
-
-  async create(userId: number, courseId: number) {
-    await this.db.insert(courseHistory).values({
-      courseId,
-      userId,
-      completionCount: 1,
+  async findAll(userId: string) {
+    return await this.db.query.courseHistory.findMany({
+      where: eq(courseHistory.userId, userId),
     });
   }
 
-  async updateCompletionCount(userId: number, courseId: number, count: number) {
+  async findByCoursePackId(userId: string, coursePackId: string) {
+    return await this.db.query.courseHistory.findMany({
+      columns: {
+        id: true,
+        coursePackId: true,
+        courseId: true,
+        completionCount: true,
+      },
+      where: and(eq(courseHistory.userId, userId), eq(courseHistory.coursePackId, coursePackId)),
+    });
+  }
+
+  async findCompletionCount(userId: string, coursePackId: string, courseId: string) {
+    const record = await this.db.query.courseHistory.findFirst({
+      where: and(
+        eq(courseHistory.userId, userId),
+        eq(courseHistory.coursePackId, coursePackId),
+        eq(courseHistory.courseId, courseId),
+      ),
+    });
+
+    return record ? record.completionCount : 0;
+  }
+
+  async upsert(userId: string, coursePackId: string, courseId: string) {
     await this.db
-      .update(courseHistory)
-      .set({
-        completionCount: count + 1,
+      .insert(courseHistory)
+      .values({
+        coursePackId,
+        courseId,
+        userId,
+        completionCount: 1,
       })
-      .where(
-        and(
-          eq(courseHistory.userId, userId),
-          eq(courseHistory.courseId, courseId),
-        ),
-      );
-  }
-
-  async setCompletionCount(userId: number, courseId: number) {
-    const result = await this.findOne(userId, courseId);
-    if (result && result.length) {
-      this.updateCompletionCount(userId, courseId, result[0].completionCount);
-    } else {
-      this.create(userId, courseId);
-    }
-  }
-
-  async findAll(user: UserEntity) {
-    return await this.db
-      .select()
-      .from(courseHistory)
-      .where(eq(courseHistory.userId, user.userId));
+      .onConflictDoUpdate({
+        target: [courseHistory.userId, courseHistory.courseId, courseHistory.coursePackId],
+        set: { completionCount: sql`course_history.completion_count + 1` },
+      });
   }
 }

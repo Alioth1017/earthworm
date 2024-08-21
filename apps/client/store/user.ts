@@ -1,54 +1,42 @@
 import { defineStore } from "pinia";
 import { ref } from "vue";
-export interface User {
-  userId: string;
-  username: string;
-  phone: string;
-}
 
-export interface SignupFormValues {
-  phone: string;
-  name: string;
-  password: string;
-}
+import type { User } from "~/types";
+import { fetchSetupNewUser } from "~/api/user";
+import { MembershipType } from "~/types";
 
-const LOCAL_STORAGE_KEY = "userInfo";
 export const useUserStore = defineStore("user", () => {
   const user = ref<User>();
 
-  function initUser(userInfo: User) {
-    user.value = userInfo;
-    saveUserInfo();
+  function initUser(val: User) {
+    user.value = val;
   }
 
-  function logoutUser() {
-    user.value = undefined;
-    removeUserInfo();
+  function isNewUser() {
+    return !user.value?.username || !user.value?.avatar;
   }
 
-  function saveUserInfo() {
-    localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(user.value));
+  async function setupNewUser(info: { username: string; avatar: string }) {
+    if (!user.value) return;
+
+    const res = await fetchSetupNewUser({
+      username: info.username,
+      avatar: info.avatar,
+    });
+
+    user.value.username = res.username;
+    user.value.avatar = res.avatar;
   }
 
-  function removeUserInfo() {
-    localStorage.removeItem(LOCAL_STORAGE_KEY);
-  }
-
-  function getUserInfo() {
-    return localStorage.getItem(LOCAL_STORAGE_KEY);
-  }
-
-  function restoreUser() {
-    const userInfoStringify = localStorage.getItem(LOCAL_STORAGE_KEY);
-
-    if (userInfoStringify) user.value = JSON.parse(userInfoStringify);
+  function isFounderMembership() {
+    return user.value?.membership.details?.type === MembershipType.FOUNDER;
   }
 
   return {
     user,
+    isNewUser,
     initUser,
-    logoutUser,
-    restoreUser,
-    getUserInfo,
+    setupNewUser,
+    isFounderMembership,
   };
 });

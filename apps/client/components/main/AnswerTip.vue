@@ -1,33 +1,21 @@
 <template>
   <div
-    class="absolute flex items-center justify-center w-3/4 text-xl top-36 left-1/2 translate-x-[-50%] dark:text-gray-50"
+    class="absolute left-1/2 top-36 flex w-3/4 translate-x-[-50%] items-center justify-center text-xl dark:text-gray-50"
   >
-    <div class="shadow-xl card bg-base-100">
-      <div class="relative card-body">
-        <div class="absolute mt-0 top-1 right-2">
-          <button
-            class="w-6 h-6 text-gray-400 outline-none dark:text-gray-300"
+    <div class="card bg-base-100 shadow-xl">
+      <div class="card-body relative">
+        <div class="absolute right-2 top-1 mt-0">
+          <UButton
+            color="gray"
+            variant="ghost"
+            icon="i-heroicons-x-mark-20-solid"
             @click="hiddenAnswerTip"
-          >
-            <svg
-              xmlns="http://www.w3.org/2000/svg"
-              width="100%"
-              height="100%"
-              viewBox="0 0 24 24"
-            >
-              <path
-                fill="none"
-                stroke="currentColor"
-                stroke-linecap="round"
-                stroke-linejoin="round"
-                stroke-width="2"
-                d="M12 12L7 7m5 5l5 5m-5-5l5-5m-5 5l-5 5"
-              />
-            </svg>
-          </button>
+            tabindex="-1"
+            :ui="{ color: { gray: { ghost: 'dark:hover:bg-gray-600' } } }"
+          />
         </div>
 
-        <div>{{ courseStore.currentStatement?.english }}</div>
+        <div class="text-3xl">{{ courseStore.currentStatement?.english }}</div>
       </div>
     </div>
   </div>

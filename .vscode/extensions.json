@@ -1,8 +1,10 @@
 {
   "recommendations": [
+    "antfu.iconify",
+    "antfu.goto-alias",
+    "bradlc.vscode-tailwindcss",
+    "esbenp.prettier-vscode",
     "editorconfig.editorconfig",
-    "dbaeumer.vscode-eslint",
-    "Vue.volar",
-    "bradlc.vscode-tailwindcss"
+    "Vue.volar"
   ]
 }

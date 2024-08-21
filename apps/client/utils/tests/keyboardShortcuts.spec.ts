@@ -1,5 +1,7 @@
 import { beforeEach } from "node:test";
+
 import { describe, expect, it, vi } from "vitest";
+
 import { fireEvent } from "~/tests/helper/fireEvent";
 import {
   cancelShortcut,
@@ -144,7 +146,59 @@ describe("keyboardShortcuts", () => {
       cancelShortcut("*", command);
       fireEvent.keyDown({ key: "1" });
 
-      expect(command).not.toBeCalled()
+      expect(command).not.toBeCalled();
+    });
+
+    it("should remove all commands when only key is provided", () => {
+      let commandA = vi.fn();
+      let commandB = vi.fn();
+      registerShortcut("enter", commandA);
+      registerShortcut("enter", commandB);
+
+      // 只传递 key，删除所有匹配的快捷键
+      cancelShortcut("enter");
+
+      // 触发
+      fireEvent.keyDown({
+        key: "enter",
+      });
+
+      expect(commandA).not.toBeCalled();
+      expect(commandB).not.toBeCalled();
+    });
+
+    it("should remove all ctrl when only key is provided", () => {
+      let commandA = vi.fn();
+      let commandB = vi.fn();
+      registerShortcut("ctrl+A", commandA);
+      registerShortcut("ctrl+a", commandB);
+
+      cancelShortcut("ctrl+a");
+
+      fireEvent.keyDown({
+        ctrlKey: true,
+        key: "a",
+      });
+
+      expect(commandA).not.toBeCalled();
+      expect(commandB).not.toBeCalled();
+    });
+
+    it("should remove all commands when only key is provided", () => {
+      let commandA = vi.fn();
+      let commandB = vi.fn();
+      registerShortcut("command+A", commandA);
+      registerShortcut("command+a", commandB);
+
+      cancelShortcut("command+a");
+
+      fireEvent.keyDown({
+        metaKey: true,
+        key: "a",
+      });
+
+      expect(commandA).not.toBeCalled();
+      expect(commandB).not.toBeCalled();
     });
   });
 

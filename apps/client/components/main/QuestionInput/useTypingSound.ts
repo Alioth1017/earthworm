@@ -1,15 +1,16 @@
 // useTypingSound.ts
 import { ref } from "vue";
+
 import errorSoundPath from "~/assets/sounds/error.mp3";
 import rightSoundPath from "~/assets/sounds/right.mp3";
 import typingSoundPath from "~/assets/sounds/typing.mp3";
 
-export function usePlayTipSound() {
-  // 正确提示音
-  const rightAudio = new Audio(rightSoundPath);
-  // 错误提示音
-  const errorAudio = new Audio(errorSoundPath);
+// 正确提示音
+const rightAudio = new Audio(rightSoundPath);
+// 错误提示音
+const errorAudio = new Audio(errorSoundPath);
 
+export function usePlayTipSound() {
   function playRightSound() {
     rightAudio.play();
   }
@@ -25,13 +26,15 @@ export function usePlayTipSound() {
 }
 
 const PLAY_INTERVAL_TIME = 60;
+let audioCtxRef: AudioContext | null = null;
+let audioBuffer: AudioBuffer | null = null;
 export function useTypingSound() {
-  let audioCtxRef: AudioContext | null = null;
-  let audioBuffer: AudioBuffer | null = null;
   const lastPlayTime = ref(0); // 与上一次播放时间间隔
 
   // 不需要等页面渲染就可以加载了（提前）
-  loadAudioContext();
+  if (!audioCtxRef) {
+    loadAudioContext();
+  }
 
   async function loadAudioContext() {
     audioCtxRef = new AudioContext();
@@ -72,10 +75,7 @@ export function useTypingSound() {
   function checkPlayTypingSound(e: KeyboardEvent) {
     if (e.altKey || e.ctrlKey || e.metaKey) return false;
 
-    if (
-      /^[a-zA-Z0-9]$/.test(e.key) ||
-      ["Backspace", " ", "'"].includes(e.key)
-    ) {
+    if (/^[a-zA-Z0-9]$/.test(e.key) || ["Backspace", " ", "'"].includes(e.key)) {
       return true;
     }
   }
